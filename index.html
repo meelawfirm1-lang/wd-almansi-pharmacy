@@ -94,7 +94,7 @@
             <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 text-primary card-link" data-bs-toggle="modal" data-bs-target="#valueChartModal" onclick="calculateAndDrawValueChart()">
                     <h5><i class="fas fa-money-bill-wave"></i> <span data-translate="totalValue">قيمة المخزون</span></h5>
-                    <h3 id="totalValue">0 ج.س</h3>
+                    <h3 id="totalValue">0 ج.س / 0 $</h3> 
                 </div>
             </div>
             
@@ -394,10 +394,13 @@
         let currentTheme = localStorage.getItem('wadAlmansiTheme') || 'light';
         let inventory = JSON.parse(localStorage.getItem('wadAlmansiData')) || [];
         
+        // سعر الصرف الافتراضي
+        const DEFAULT_EXCHANGE_RATE = 3000;
+
         let categoryChartInstance = null;
         let expiryChartInstance = null;
         let modalChartInstance = null; 
-        let currencyValueChartInstance = null; // New chart instance for currency conversion
+        let currencyValueChartInstance = null; 
 
         // --- وظائف اللغة والوضع الليلي ---
         function applyLanguage(lang) {
@@ -456,16 +459,35 @@
         }
         
         // --- 2. إدارة قاعدة البيانات (Local Storage) وتصنيف الأدوية ---
+        
+        // أسماء التصنيفات الافتراضية للترجمة
+        const defaultCategories = ['مسكنات', 'مضادات حيوية', 'فيتامينات ومكملات', 'أدوية شراب', 'أخرى'];
+        
+        function getTranslatedCategoryName(categoryName) {
+            const lang = currentLang;
+            for (const key in translations[lang]) {
+                // البحث العكسي عن اسم التصنيف المطابق في القائمة الافتراضية
+                if (defaultCategories.includes(categoryName) && translations.ar[key] === categoryName && translations[lang][key]) {
+                     return translations[lang][key];
+                }
+            }
+            return categoryName; // إذا لم يتم العثور على ترجمة، استخدم الاسم كما هو
+        }
+
         function getUniqueCategories() {
             return [...new Set(inventory.map(item => item.category))].filter(Boolean);
         }
         
+        // تحسين دالة تحديث قائمة التصنيفات لتعمل مع الترجمة
         function updateCategoryOptions(lang) {
             const select = document.getElementById('categoryFilter');
             select.innerHTML = `<option value="">${translations[lang].filterAll}</option>`;
             
             getUniqueCategories().forEach(cat => {
-                 select.innerHTML += `<option value="${cat}">${cat}</option>`;
+                 // عرض اسم التصنيف باللغة الحالية، ولكن تخزين القيمة الأصلية للفلترة (أو العكس إذا كانت لغة الإدخال تتغير)
+                 // لحل مشكلة التعريب، نستخدم القيمة المخزنة (باللغة التي تم إدخالها بها) كـ value 
+                 // ونستخدم اسم التصنيف المترجم كـ text
+                 select.innerHTML += `<option value="${cat}">${getTranslatedCategoryName(cat)}</option>`;
             });
             
             const filterValue = localStorage.getItem('categoryFilterValue') || '';
@@ -512,7 +534,7 @@
                     <tr class="${rowClass}">
                         <td><strong class="drug-name-link" onclick="showDetails(${index})">${item.name}</strong></td>
                         <td>${item.active}</td>
-                        <td>${item.category}</td>
+                        <td>${getTranslatedCategoryName(item.category)}</td> 
                         <td class="${qtyClass}">${item.qty}</td>
                         <td class="${item.qty < 5 ? 'text-danger fw-bold' : ''}">${item.price}</td>
                         <td class="${expiryClass}">${item.exp}</td>
@@ -540,6 +562,7 @@
 
             if(name === '' || qty === '' || price === '' || exp === '') { alert(translations[currentLang].alertBasicData); return; }
 
+            // يتم حفظ اسم التصنيف كما هو في الإدخال (باللغة التي تم إدخالها به)
             const newItem = { name, active, category, qty: Number(qty), price: Number(price), exp };
 
             if(id === '') {
@@ -596,8 +619,15 @@
         function updateReports() {
             document.getElementById('totalItems').innerText = inventory.length;
             
-            const totalVal = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('totalValue').innerText = totalVal.toLocaleString() + ' ' + (currentLang === 'ar' ? 'ج.س' : 'SDG');
+            const totalVal = calculateTotalSDG();
+            const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || DEFAULT_EXCHANGE_RATE;
+            const totalUSD = totalVal / exchangeRate;
+            
+            // عرض القيمة التقديرية في البطاقة الرئيسية
+            document.getElementById('totalValue').innerText = 
+                totalVal.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ' + (currentLang === 'ar' ? 'ج.س' : 'SDG') +
+                ' / ' +
+                totalUSD.toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' $';
 
             const lowStockCount = inventory.filter(item => item.qty < 5).length;
             document.getElementById('lowStock').innerText = lowStockCount;
@@ -617,7 +647,6 @@
 
         // --- 5. وظيفة رسم قيمة المخزون بالعملات (USD/SDG) ---
         let totalSDGValue = 0; // يتم تحديثها في updateReports
-        let currencyValueChartInstance = null; // للتأكد من إعادة إنشاء الرسم البياني
         
         function calculateTotalSDG() {
              totalSDGValue = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -631,12 +660,15 @@
             } else if (value >= 1000) {
                 return (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' K ' + currency;
             }
-            return value.toLocaleString(undefined, { maximumFractionDigits: (currency === 'USD' ? 2 : 0) }) + ' ' + currency;
+            // إذا كانت العملة دولار، اعرض منزلتين عشريتين
+            const maxDigits = (currency === 'USD' ? 2 : 0);
+            return value.toLocaleString(undefined, { maximumFractionDigits: maxDigits }) + ' ' + currency;
         }
 
 
         function calculateAndDrawValueChart() {
-            const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || 1;
+            // استخدام القيمة المدخلة، أو القيمة الافتراضية 3000
+            const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || DEFAULT_EXCHANGE_RATE;
             const totalSDG = calculateTotalSDG();
             const totalUSD = totalSDG / exchangeRate;
             
@@ -653,11 +685,13 @@
             if (currencyValueChartInstance) currencyValueChartInstance.destroy();
 
             currencyValueChartInstance = new Chart(document.getElementById('currencyValueChart'), {
-                type: 'doughnut', // تم التغيير إلى دائري
+                type: 'doughnut', // الرسم البياني الدائري المطلوب
                 data: {
                     labels: labels,
                     datasets: [{
-                        data: [totalSDG, totalUSD], // البيانات هي القيمة الإجمالية في كل عملة
+                        // نستخدم قيمة الدولار المحولة * سعر الصرف لعرض قيمة الجنيه السوداني في شريحة 
+                        // وقيمة الدولار كشريحة أخرى، حيث يمثلان نفس القيمة المالية ولكن بوحدة مختلفة
+                        data: [totalSDG, totalUSD], 
                         backgroundColor: ['#3498db', '#2ecc71'], 
                         hoverOffset: 4
                     }]
@@ -705,10 +739,17 @@
         
         // وظيفة تحديث الرسوم البيانية (الرئيسية والمنبثقة)
         function updateCharts() {
-            if (inventory.length === 0) return;
+            if (inventory.length === 0) {
+                 // تدمير الرسوم البيانية في حال كانت قاعدة البيانات فارغة
+                if (categoryChartInstance) categoryChartInstance.destroy();
+                if (expiryChartInstance) expiryChartInstance.destroy();
+                if (modalChartInstance) modalChartInstance.destroy();
+                return;
+            }
 
             const categoryData = inventory.reduce((acc, item) => {
-                acc[item.category] = (acc[item.category] || 0) + (item.price * item.qty);
+                const translatedCategory = getTranslatedCategoryName(item.category);
+                acc[translatedCategory] = (acc[translatedCategory] || 0) + (item.price * item.qty);
                 return acc;
             }, {});
 
@@ -771,7 +812,7 @@
             const item = inventory[index];
             document.getElementById('detailName').textContent = item.name;
             document.getElementById('detailActive').textContent = item.active;
-            document.getElementById('detailCategory').textContent = item.category;
+            document.getElementById('detailCategory').textContent = getTranslatedCategoryName(item.category);
             document.getElementById('detailQty').textContent = item.qty;
             document.getElementById('detailPrice').textContent = item.price;
             document.getElementById('detailExp').textContent = item.exp;
@@ -795,7 +836,7 @@
                     bodyContent += `
                         <tr class="table-warning">
                             <td>${item.name}</td>
-                            <td>${item.category}</td>
+                            <td>${getTranslatedCategoryName(item.category)}</td>
                             <td>${item.qty < 5 ? translations[currentLang].lowStockHeader : 'آمن'}</td>
                             <td>${item.qty}</td>
                         </tr>
@@ -867,7 +908,7 @@
                         <div class="card card-custom p-3 mb-3">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6>${item.name} (${item.category})</h6>
+                                    <h6>${item.name} (${getTranslatedCategoryName(item.category)})</h6>
                                     <p class="mb-1 small"> ${translations[currentLang].tableQty}: ${item.qty} | ${translations[currentLang].tableExpiryDate}: ${item.exp}</p>
                                 </div>
                                 <div class="text-end">${statusText}</div>
