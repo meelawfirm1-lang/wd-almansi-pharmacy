@@ -3,28 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صيدلية ود المنسي - نظام الإدارة</title>
+    <title data-translate="appTitle">صيدلية ود المنسي - نظام الإدارة</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .login-container { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .dashboard { display: none; } /* مخفي حتى تسجيل الدخول */
-        .card-custom { border: none; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .header-custom { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px; }
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: white;
+            --text-color: #333;
+            --header-bg: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        [data-bs-theme="dark"] {
+            --bg-color: #1a1a2e;
+            --card-bg: #272740;
+            --text-color: #f0f0f0;
+            --header-bg: linear-gradient(135deg, #4b0082, #8a2be2);
+        }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .login-container { max-width: 400px; margin: 100px auto; padding: 30px; background: var(--card-bg); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .dashboard { display: none; }
+        .card-custom { border: none; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; background-color: var(--card-bg); color: var(--text-color); }
+        .header-custom { background: var(--header-bg); color: white; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px; }
         .btn-custom { border-radius: 20px; padding: 8px 20px; }
-        .table-custom th { background-color: #f8f9fa; }
-        .expired { color: red; font-weight: bold; }
+        .table-custom th { background-color: #f8f9fa; color: #333;}
+        [data-bs-theme="dark"] .table-custom th { background-color: #333; color: #ccc;}
+        .expired { color: #e74c3c !important; font-weight: bold; }
+        .soon-expired { color: #f39c12 !important; }
+        .danger-bg { background-color: #e74c3c20; }
+        .warning-bg { background-color: #f39c1220; }
+        canvas { max-height: 300px; }
     </style>
 </head>
 <body>
 
     <div id="loginSection" class="container">
         <div class="login-container text-center">
-            <h3 class="mb-4 text-success"><i class="fas fa-clinic-medical"></i> صيدلية ود المنسي</h3>
-            <input type="password" id="passwordInput" class="form-control mb-3" placeholder="أدخل كلمة المرور">
-            <button onclick="checkLogin()" class="btn btn-success w-100 btn-custom">دخول</button>
-            <p id="loginError" class="text-danger mt-2" style="display:none;">كلمة المرور غير صحيحة!</p>
+            <h3 class="mb-4 text-success"><i class="fas fa-clinic-medical"></i> <span data-translate="pharmacyName">صيدلية ود المنسي</span></h3>
+            <input type="password" id="passwordInput" class="form-control mb-3" data-translate="placeholderPassword" placeholder="أدخل كلمة المرور">
+            <button onclick="checkLogin()" class="btn btn-success w-100 btn-custom" data-translate="login">دخول</button>
+            <p id="loginError" class="text-danger mt-2" style="display:none;" data-translate="loginError">كلمة المرور غير صحيحة!</p>
         </div>
     </div>
 
@@ -32,42 +50,86 @@
         
         <div class="header-custom row align-items-center">
             <div class="col-md-6">
-                <h2><i class="fas fa-mortar-pestle"></i> صيدلية ود المنسي</h2>
-                <small>نظام إدارة المخزون والمبيعات</small>
+                <h2><i class="fas fa-mortar-pestle"></i> <span data-translate="pharmacyNameHeader">صيدلية ود المنسي</span></h2>
+                <small data-translate="systemDesc">نظام إدارة المخزون والمبيعات</small>
             </div>
-            <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                <button onclick="logout()" class="btn btn-outline-light btn-sm">تسجيل خروج <i class="fas fa-sign-out-alt"></i></button>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2">
+                
+                <button onclick="toggleLanguage()" class="btn btn-outline-light btn-sm" id="langToggleBtn">
+                    <i class="fas fa-globe"></i> <span data-translate="langSwitch">English</span>
+                </button>
+                
+                <button onclick="toggleTheme()" class="btn btn-outline-light btn-sm" id="themeToggleBtn">
+                    <i class="fas fa-moon"></i> <span data-translate="themeSwitch">الوضع الليلي</span>
+                </button>
+                
+                <button onclick="logout()" class="btn btn-outline-light btn-sm" data-translate="logout">
+                    تسجيل خروج <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </div>
 
         <div class="row px-3">
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 bg-white text-success">
-                    <h5><i class="fas fa-boxes"></i> إجمالي الأصناف</h5>
+                    <h5><i class="fas fa-boxes"></i> <span data-translate="totalItems">إجمالي الأصناف</span></h5>
                     <h3 id="totalItems">0</h3>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 bg-white text-primary">
-                    <h5><i class="fas fa-money-bill-wave"></i> قيمة المخزون</h5>
+                    <h5><i class="fas fa-money-bill-wave"></i> <span data-translate="totalValue">قيمة المخزون</span></h5>
                     <h3 id="totalValue">0 ج.س</h3>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 bg-white text-danger">
-                    <h5><i class="fas fa-exclamation-triangle"></i> تنبيهات النواقص</h5>
+                    <h5><i class="fas fa-exclamation-triangle"></i> <span data-translate="expiredAlerts">تنبيهات الانتهاء</span></h5>
+                    <h3 id="expiredAlerts">0</h3>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card card-custom p-3 bg-white text-warning">
+                    <h5><i class="fas fa-minus-circle"></i> <span data-translate="lowStock">تنبيهات النواقص</span></h5>
                     <h3 id="lowStock">0</h3>
                 </div>
             </div>
         </div>
 
         <div class="card card-custom mx-3 p-4">
-            <div class="row mb-3">
-                <div class="col-md-8">
-                    <input type="text" id="searchInput" onkeyup="searchItems()" class="form-control" placeholder="بحث عن دواء...">
+            <h4 data-translate="dashboardHeader">لوحة المعلومات والتقارير</h4>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <h6 data-translate="graphStockTitle">قيمة المخزون حسب التصنيف</h6>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <h6 data-translate="graphExpTitle">الأدوية القريبة من الانتهاء (أصناف)</h6>
+                    <canvas id="expiryChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button onclick="exportToExcel()" class="btn btn-info btn-custom"><i class="fas fa-file-excel"></i> <span data-translate="exportExcel">تصدير إلى Excel</span></button>
+                <button onclick="backupData()" class="btn btn-secondary btn-custom"><i class="fas fa-download"></i> <span data-translate="backupData">حفظ نسخة احتياطية</span></button>
+                <button onclick="document.getElementById('restoreInput').click()" class="btn btn-warning btn-custom"><i class="fas fa-upload"></i> <span data-translate="restoreData">استعادة البيانات</span></button>
+                <input type="file" id="restoreInput" style="display:none;" onchange="restoreData(event)" accept="application/json">
+            </div>
+        </div>
+        
+        <div class="card card-custom mx-3 p-4 mt-3">
+            <h4 data-translate="inventoryTableTitle">جدول المخزون الحالي</h4>
+            <div class="row mb-3 align-items-center">
+                <div class="col-md-5">
+                    <input type="text" id="searchInput" onkeyup="searchItems()" class="form-control" data-translate="placeholderSearch" placeholder="بحث عن دواء...">
+                </div>
+                <div class="col-md-3 mt-2 mt-md-0">
+                    <select id="categoryFilter" onchange="loadItems()" class="form-select">
+                        <option value="" data-translate="filterAll">كل التصنيفات</option>
+                        </select>
                 </div>
                 <div class="col-md-4 text-end mt-2 mt-md-0">
-                    <button class="btn btn-success btn-custom" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <button class="btn btn-success btn-custom" data-bs-toggle="modal" data-bs-target="#addItemModal" data-translate="addItem">
                         <i class="fas fa-plus"></i> إضافة دواء جديد
                     </button>
                 </div>
@@ -77,12 +139,13 @@
                 <table class="table table-hover table-custom">
                     <thead>
                         <tr>
-                            <th>اسم الدواء</th>
-                            <th>النوع</th>
-                            <th>الكمية</th>
-                            <th>السعر (ج.س)</th>
-                            <th>تاريخ الانتهاء</th>
-                            <th>إجراءات</th>
+                            <th data-translate="tableDrugName">اسم الدواء</th>
+                            <th data-translate="tableActiveIngredient">المادة الفعالة</th>
+                            <th data-translate="tableCategory">التصنيف</th>
+                            <th data-translate="tableQty">الكمية المتبقية</th>
+                            <th data-translate="tablePrice">سعر الوحدة (ج.س)</th>
+                            <th data-translate="tableExpiryDate">تاريخ الانتهاء</th>
+                            <th data-translate="tableActions">إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryBody">
@@ -96,24 +159,29 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">بيانات الدواء</h5>
+                    <h5 class="modal-title" data-translate="modalTitle">بيانات الدواء</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="itemId">
-                    <div class="mb-3"><label>اسم الدواء</label><input type="text" id="itemName" class="form-control"></div>
-                    <div class="mb-3"><label>النوع</label>
-                        <select id="itemType" class="form-select">
-                            <option>أقراص</option><option>شراب</option><option>حقن</option><option>مرهم</option><option>أخرى</option>
+                    <div class="mb-3"><label data-translate="labelDrugName">اسم الدواء</label><input type="text" id="itemName" class="form-control"></div>
+                    <div class="mb-3"><label data-translate="labelActiveIngredient">المادة الفعالة</label><input type="text" id="itemActive" class="form-control"></div>
+                    <div class="mb-3"><label data-translate="labelCategory">التصنيف</label>
+                        <select id="itemCategory" class="form-select">
+                            <option data-translate="categoryPainkillers">مسكنات</option>
+                            <option data-translate="categoryAntibiotics">مضادات حيوية</option>
+                            <option data-translate="categoryVitamins">فيتامينات ومكملات</option>
+                            <option data-translate="categorySyrups">أدوية شراب</option>
+                            <option data-translate="categoryOthers">أخرى</option>
                         </select>
                     </div>
-                    <div class="mb-3"><label>الكمية</label><input type="number" id="itemQty" class="form-control"></div>
-                    <div class="mb-3"><label>سعر الوحدة</label><input type="number" id="itemPrice" class="form-control"></div>
-                    <div class="mb-3"><label>تاريخ الانتهاء</label><input type="date" id="itemExp" class="form-control"></div>
+                    <div class="mb-3"><label data-translate="labelQty">الكمية المتبقية</label><input type="number" id="itemQty" class="form-control"></div>
+                    <div class="mb-3"><label data-translate="labelPrice">سعر الوحدة</label><input type="number" id="itemPrice" class="form-control"></div>
+                    <div class="mb-3"><label data-translate="labelExpiryDate">تاريخ الانتهاء</label><input type="date" id="itemExp" class="form-control"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
-                    <button type="button" onclick="saveItem()" class="btn btn-success">حفظ البيانات</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">إغلاق</button>
+                    <button type="button" onclick="saveItem()" class="btn btn-success" data-translate="save">حفظ البيانات</button>
                 </div>
             </div>
         </div>
@@ -121,49 +189,179 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- 1. إعدادات الأمان البسيطة ---
-        const ADMIN_PASS = "123456"; // كلمة المرور (يمكنك تغييرها من هنا)
+        // --- قاموس الترجمة (Translation Dictionary) ---
+        const translations = {
+            ar: {
+                appTitle: 'صيدلية ود المنسي - نظام الإدارة', pharmacyName: 'صيدلية ود المنسي', pharmacyNameHeader: 'صيدلية ود المنسي', systemDesc: 'نظام إدارة المخزون والمبيعات',
+                placeholderPassword: 'أدخل كلمة المرور', login: 'دخول', loginError: 'كلمة المرور غير صحيحة!', logout: 'تسجيل خروج',
+                langSwitch: 'English', themeSwitch: 'الوضع الليلي',
+                totalItems: 'إجمالي الأصناف', totalValue: 'قيمة المخزون', expiredAlerts: 'تنبيهات الانتهاء', lowStock: 'تنبيهات النواقص',
+                dashboardHeader: 'لوحة المعلومات والتقارير', graphStockTitle: 'قيمة المخزون حسب التصنيف', graphExpTitle: 'الأدوية القريبة من الانتهاء (أصناف)',
+                exportExcel: 'تصدير إلى Excel', backupData: 'حفظ نسخة احتياطية', restoreData: 'استعادة البيانات',
+                inventoryTableTitle: 'جدول المخزون الحالي', placeholderSearch: 'بحث عن دواء...', filterAll: 'كل التصنيفات',
+                tableDrugName: 'اسم الدواء', tableActiveIngredient: 'المادة الفعالة', tableCategory: 'التصنيف', tableQty: 'الكمية المتبقية', tablePrice: 'سعر الوحدة (ج.س)', tableExpiryDate: 'تاريخ الانتهاء', tableActions: 'إجراءات',
+                addItem: 'إضافة دواء جديد', modalTitle: 'بيانات الدواء',
+                labelDrugName: 'اسم الدواء', labelActiveIngredient: 'المادة الفعالة', labelCategory: 'التصنيف', labelQty: 'الكمية المتبقية', labelPrice: 'سعر الوحدة', labelExpiryDate: 'تاريخ الانتهاء',
+                categoryPainkillers: 'مسكنات', categoryAntibiotics: 'مضادات حيوية', categoryVitamins: 'فيتامينات ومكملات', categorySyrups: 'أدوية شراب', categoryOthers: 'أخرى',
+                close: 'إغلاق', save: 'حفظ البيانات', confirmDelete: 'هل أنت متأكد من حذف هذا الصنف؟', alertBasicData: 'الرجاء تعبئة البيانات الأساسية',
+                chartLabelItems: 'عدد الأصناف', chartLabelExpired: 'منتهية', chartLabelSoon: 'قريباً', chartLabelSafe: 'آمنة',
+                confirmRestore: 'هل أنت متأكد من استعادة البيانات؟ سيتم مسح البيانات الحالية.', restoreSuccess: 'تم استعادة البيانات بنجاح!', restoreError: 'خطأ في ملف الاستعادة.',
+                exportFileName: 'تقرير-صيدلية-ود-المنسي',
+            },
+            en: {
+                appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
+                placeholderPassword: 'Enter Password', login: 'Login', loginError: 'Incorrect Password!', logout: 'Logout',
+                langSwitch: 'العربية', themeSwitch: 'Day Mode',
+                totalItems: 'Total Items', totalValue: 'Stock Value', expiredAlerts: 'Expiry Alerts', lowStock: 'Low Stock Alerts',
+                dashboardHeader: 'Dashboard and Reports', graphStockTitle: 'Stock Value by Category', graphExpTitle: 'Near Expiry Drugs (Items)',
+                exportExcel: 'Export to Excel', backupData: 'Backup Data', restoreData: 'Restore Data',
+                inventoryTableTitle: 'Current Inventory Table', placeholderSearch: 'Search for drug...', filterAll: 'All Categories',
+                tableDrugName: 'Drug Name', tableActiveIngredient: 'Active Ingredient', tableCategory: 'Category', tableQty: 'Quantity Left', tablePrice: 'Unit Price (SDG)', tableExpiryDate: 'Expiry Date', tableActions: 'Actions',
+                addItem: 'Add New Drug', modalTitle: 'Drug Data',
+                labelDrugName: 'Drug Name', labelActiveIngredient: 'Active Ingredient', labelCategory: 'Category', labelQty: 'Quantity Left', labelPrice: 'Unit Price', labelExpiryDate: 'Expiry Date',
+                categoryPainkillers: 'Painkillers', categoryAntibiotics: 'Antibiotics', categoryVitamins: 'Vitamins & Supplements', categorySyrups: 'Syrups', categoryOthers: 'Others',
+                close: 'Close', save: 'Save Data', confirmDelete: 'Are you sure you want to delete this item?', alertBasicData: 'Please fill basic data',
+                chartLabelItems: 'Item Count', chartLabelExpired: 'Expired', chartLabelSoon: 'Soon', chartLabelSafe: 'Safe',
+                confirmRestore: 'Are you sure you want to restore data? Current data will be erased.', restoreSuccess: 'Data restored successfully!', restoreError: 'Error in restoration file.',
+                exportFileName: 'Wad-Almansi-Pharmacy-Report',
+            }
+        };
 
+        // --- 1. إعدادات النظام ---
+        const ADMIN_PASS = "123456"; 
+        let currentLang = localStorage.getItem('wadAlmansiLang') || 'ar';
+        let currentTheme = localStorage.getItem('wadAlmansiTheme') || 'light';
+        let inventory = JSON.parse(localStorage.getItem('wadAlmansiData')) || [];
+        let categoryChartInstance = null;
+        let expiryChartInstance = null;
+
+        // --- وظائف اللغة والوضع الليلي (تاسعاً: كل ما هو ضروري لكفاءة النظام) ---
+        function applyLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                element.textContent = translations[lang][key] || element.textContent;
+            });
+            document.getElementById('langToggleBtn').querySelector('span').textContent = lang === 'ar' ? translations.ar.langSwitch : translations.en.langSwitch;
+            localStorage.setItem('wadAlmansiLang', lang);
+            updateCategoryOptions(lang);
+            loadItems(); // إعادة تحميل الجدول بالعربية أو الإنجليزية
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            applyLanguage(currentLang);
+            updateCharts();
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            const icon = document.getElementById('themeToggleBtn').querySelector('i');
+            const text = document.getElementById('themeToggleBtn').querySelector('span');
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun';
+                text.textContent = currentLang === 'ar' ? 'الوضع النهاري' : 'Day Mode';
+            } else {
+                icon.className = 'fas fa-moon';
+                text.textContent = currentLang === 'ar' ? 'الوضع الليلي' : 'Night Mode';
+            }
+            localStorage.setItem('wadAlmansiTheme', theme);
+            updateCharts(); // تحديث الألوان في الرسم البياني
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(currentTheme);
+        }
+
+        // --- وظيفة التحكم بالدخول والخروج ---
         function checkLogin() {
             const input = document.getElementById('passwordInput').value;
             if(input === ADMIN_PASS) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('mainDashboard').style.display = 'block';
-                loadItems(); // تحميل البيانات عند الدخول
+                loadItems(); 
             } else {
                 document.getElementById('loginError').style.display = 'block';
             }
         }
 
         function logout() {
-            location.reload(); // إعادة تحميل الصفحة للخروج
+            location.reload(); 
         }
+        
+        // --- 2. إدارة قاعدة البيانات (Local Storage) وتصنيف الأدوية ---
+        function getUniqueCategories() {
+            return [...new Set(inventory.map(item => item.category))].filter(Boolean);
+        }
+        
+        function updateCategoryOptions(lang) {
+            const select = document.getElementById('categoryFilter');
+            select.innerHTML = `<option value="">${translations[lang].filterAll}</option>`;
+            
+            // إضافة التصنيفات الافتراضية للـ Modal
+            const modalSelect = document.getElementById('itemCategory');
+            modalSelect.innerHTML = '';
+            ['Painkillers', 'Antibiotics', 'Vitamins', 'Syrups', 'Others'].forEach(catKey => {
+                const key = 'category' + catKey;
+                modalSelect.innerHTML += `<option data-translate="${key}">${translations[lang][key]}</option>`;
+            });
 
-        // --- 2. إدارة قاعدة البيانات (Local Storage) ---
-        let inventory = JSON.parse(localStorage.getItem('wadAlmansiData')) || [];
+            // إضافة التصنيفات المستخدمة حالياً في المخزون لفلتر البحث
+            getUniqueCategories().forEach(cat => {
+                 select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+            // إعادة تعيين الفلتر بعد التحديث
+            const filterValue = localStorage.getItem('categoryFilterValue') || '';
+            select.value = filterValue;
+        }
 
         function saveData() {
             localStorage.setItem('wadAlmansiData', JSON.stringify(inventory));
             loadItems();
             updateReports();
+            updateCharts(); // تحديث الرسوم البيانية عند الحفظ
         }
 
         function loadItems() {
             const tbody = document.getElementById('inventoryBody');
             tbody.innerHTML = '';
+            const selectedCategory = document.getElementById('categoryFilter').value;
+            localStorage.setItem('categoryFilterValue', selectedCategory);
+
+            const filteredInventory = inventory.filter(item => 
+                selectedCategory === '' || item.category === selectedCategory
+            );
             
-            inventory.forEach((item, index) => {
-                // فحص انتهاء الصلاحية
-                const today = new Date().toISOString().split('T')[0];
-                const isExpired = item.exp < today ? 'expired' : '';
+            filteredInventory.forEach((item, index) => {
+                const today = new Date();
+                const expiryDate = new Date(item.exp);
+                const oneMonthFromNow = new Date();
+                oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+                let expiryClass = '';
+                let rowClass = '';
+
+                if (expiryDate < today) {
+                    expiryClass = 'expired';
+                    rowClass = 'danger-bg'; // تنبيه لتاريخ الانتهاء
+                } else if (expiryDate < oneMonthFromNow) {
+                    expiryClass = 'soon-expired';
+                    rowClass = 'warning-bg';
+                }
+
+                // تنبيه للكمية المتبقية
+                const qtyClass = item.qty < 5 ? 'text-danger fw-bold' : '';
 
                 let row = `
-                    <tr>
+                    <tr class="${rowClass}">
                         <td><strong>${item.name}</strong></td>
-                        <td>${item.type}</td>
-                        <td class="${item.qty < 5 ? 'text-danger fw-bold' : ''}">${item.qty}</td>
+                        <td>${item.active}</td>
+                        <td>${item.category}</td>
+                        <td class="${qtyClass}">${item.qty}</td>
                         <td>${item.price}</td>
-                        <td class="${isExpired}">${item.exp}</td>
+                        <td class="${expiryClass}">${item.exp}</td>
                         <td>
                             <button onclick="editItem(${index})" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
                             <button onclick="deleteItem(${index})" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
@@ -173,25 +371,27 @@
                 tbody.innerHTML += row;
             });
             updateReports();
+            updateCategoryOptions(currentLang);
         }
 
-        // --- 3. عمليات الإضافة والتعديل والحذف ---
+        // --- 3. عمليات الإضافة والتعديل والحذف (إصلاح الأخطاء) ---
         function saveItem() {
             const id = document.getElementById('itemId').value;
             const name = document.getElementById('itemName').value;
-            const type = document.getElementById('itemType').value;
+            const active = document.getElementById('itemActive').value; // حقل جديد
+            const category = document.getElementById('itemCategory').value; // حقل جديد
             const qty = document.getElementById('itemQty').value;
             const price = document.getElementById('itemPrice').value;
             const exp = document.getElementById('itemExp').value;
 
-            if(name === '' || qty === '' || price === '') { alert('الرجاء تعبئة البيانات الأساسية'); return; }
+            if(name === '' || qty === '' || price === '' || exp === '') { alert(translations[currentLang].alertBasicData); return; }
 
-            const newItem = { name, type, qty: Number(qty), price: Number(price), exp };
+            const newItem = { name, active, category, qty: Number(qty), price: Number(price), exp };
 
             if(id === '') {
-                inventory.push(newItem); // إضافة جديد
+                inventory.push(newItem); 
             } else {
-                inventory[id] = newItem; // تعديل موجود
+                inventory[id] = newItem; 
             }
 
             saveData();
@@ -199,6 +399,7 @@
             // إغلاق النافذة وتفريغ الحقول
             document.getElementById('itemId').value = '';
             document.getElementById('itemName').value = '';
+            document.getElementById('itemActive').value = '';
             document.getElementById('itemQty').value = '';
             document.getElementById('itemPrice').value = '';
             const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
@@ -206,7 +407,7 @@
         }
 
         function deleteItem(index) {
-            if(confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
+            if(confirm(translations[currentLang].confirmDelete)) {
                 inventory.splice(index, 1);
                 saveData();
             }
@@ -216,7 +417,8 @@
             const item = inventory[index];
             document.getElementById('itemId').value = index;
             document.getElementById('itemName').value = item.name;
-            document.getElementById('itemType').value = item.type;
+            document.getElementById('itemActive').value = item.active;
+            document.getElementById('itemCategory').value = item.category;
             document.getElementById('itemQty').value = item.qty;
             document.getElementById('itemPrice').value = item.price;
             document.getElementById('itemExp').value = item.exp;
@@ -230,20 +432,175 @@
             const rows = document.querySelectorAll('#inventoryBody tr');
             rows.forEach(row => {
                 const name = row.cells[0].textContent.toLowerCase();
-                row.style.display = name.includes(text) ? '' : 'none';
+                const active = row.cells[1].textContent.toLowerCase();
+                row.style.display = (name.includes(text) || active.includes(text)) ? '' : 'none';
             });
         }
 
-        // --- 4. التقارير ---
+        // --- 4. التقارير والرسوم البيانية (ميزات جديدة) ---
         function updateReports() {
             document.getElementById('totalItems').innerText = inventory.length;
             
             const totalVal = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('totalValue').innerText = totalVal.toLocaleString() + ' ج.س';
+            document.getElementById('totalValue').innerText = totalVal.toLocaleString() + ' ' + (currentLang === 'ar' ? 'ج.س' : 'SDG');
 
             const lowStockCount = inventory.filter(item => item.qty < 5).length;
             document.getElementById('lowStock').innerText = lowStockCount;
+
+            const today = new Date();
+            const oneMonthFromNow = new Date();
+            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+            const expiredCount = inventory.filter(item => new Date(item.exp) < today).length;
+            document.getElementById('expiredAlerts').innerText = expiredCount;
         }
+
+        function updateCharts() {
+            if (inventory.length === 0) return;
+
+            // Chart 1: قيمة المخزون حسب التصنيف
+            const categoryData = inventory.reduce((acc, item) => {
+                acc[item.category] = (acc[item.category] || 0) + (item.price * item.qty);
+                return acc;
+            }, {});
+
+            const chartColors = [
+                '#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#e74c3c', '#1abc9c', '#f39c12'
+            ];
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(categoryData),
+                    datasets: [{
+                        label: translations[currentLang].totalValue,
+                        data: Object.values(categoryData),
+                        backgroundColor: chartColors.slice(0, Object.keys(categoryData).length),
+                        borderColor: chartColors.slice(0, Object.keys(categoryData).length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: translations[currentLang].totalValue } }
+                    }
+                }
+            });
+
+            // Chart 2: تنبيهات الانتهاء
+            const today = new Date();
+            const soonExpiry = new Date();
+            soonExpiry.setMonth(soonExpiry.getMonth() + 3); // 3 أشهر للتنبيه القريب
+
+            const expired = inventory.filter(item => new Date(item.exp) < today).length;
+            const soon = inventory.filter(item => new Date(item.exp) >= today && new Date(item.exp) <= soonExpiry).length;
+            const safe = inventory.length - expired - soon;
+
+            if (expiryChartInstance) expiryChartInstance.destroy();
+            expiryChartInstance = new Chart(document.getElementById('expiryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: [translations[currentLang].chartLabelExpired, translations[currentLang].chartLabelSoon, translations[currentLang].chartLabelSafe],
+                    datasets: [{
+                        data: [expired, soon, safe],
+                        backgroundColor: ['#e74c3c', '#f39c12', '#2ecc71'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+        
+        // --- 5. النسخ الاحتياطي والاستعادة (Backup/Restore) ---
+        function backupData() {
+            const dataStr = JSON.stringify(inventory, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fileName = translations[currentLang].exportFileName + '-Backup-' + new Date().toISOString().split('T')[0] + '.json';
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function restoreData(event) {
+            if (!confirm(translations[currentLang].confirmRestore)) return;
+
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const restoredData = JSON.parse(e.target.result);
+                    // التحقق من أن البيانات تبدو كبيانات مخزون
+                    if (Array.isArray(restoredData) && restoredData.every(item => item.name && item.qty !== undefined)) {
+                        inventory = restoredData;
+                        saveData();
+                        alert(translations[currentLang].restoreSuccess);
+                    } else {
+                        throw new Error("Invalid format");
+                    }
+                } catch (error) {
+                    alert(translations[currentLang].restoreError + ' (' + error.message + ')');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 6. التصدير إلى Excel (CSV) ---
+        function exportToExcel() {
+            let csv = [];
+            const headers = [
+                translations[currentLang].tableDrugName, 
+                translations[currentLang].tableActiveIngredient, 
+                translations[currentLang].tableCategory, 
+                translations[currentLang].tableQty, 
+                translations[currentLang].tablePrice, 
+                translations[currentLang].tableExpiryDate
+            ];
+            csv.push(headers.join(','));
+
+            inventory.forEach(item => {
+                const row = [
+                    `"${item.name.replace(/"/g, '""')}"`, // تهيئة للقراءة في Excel
+                    `"${item.active.replace(/"/g, '""')}"`,
+                    `"${item.category.replace(/"/g, '""')}"`,
+                    item.qty,
+                    item.price,
+                    item.exp
+                ].join(',');
+                csv.push(row);
+            });
+
+            const csvFile = new Blob(["\ufeff" + csv.join('\n')], { type: "text/csv;charset=utf-8;" }); // إضافة \ufeff لدعم UTF-8 في Excel
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(csvFile);
+            link.download = translations[currentLang].exportFileName + '.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // --- تهيئة النظام عند التحميل ---
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTheme(currentTheme);
+            applyLanguage(currentLang);
+        });
     </script>
 </body>
 </html>
