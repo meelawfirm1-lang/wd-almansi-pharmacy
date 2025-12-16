@@ -593,7 +593,7 @@
                 };
                 reader.readAsText(file);
             } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
-                // استعادة من ملف CSV/Excel (تمت إضافتها)
+                // استعادة من ملف CSV/Excel
                 if (!confirm(translations[currentLang].confirmRestore + '\n' + translations[currentLang].restoreCSVWarning)) return;
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -617,30 +617,27 @@
             }
         }
         
-        // وظيفة مساعدة لتحويل CSV إلى تنسيق البيانات (ميزة جديدة)
+        // وظيفة مساعدة لتحويل CSV إلى تنسيق البيانات 
         function parseCSV(csv) {
             const lines = csv.split('\n').filter(line => line.trim() !== '');
-            if (lines.length <= 1) return []; // لا يوجد رؤوس أعمدة أو بيانات
+            if (lines.length <= 1) return []; 
 
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
             const data = [];
             
-            // ترتيب الأعمدة المتوقع (باللغة الإنجليزية الداخلية لسهولة المعالجة)
-            const expectedKeys = ['name', 'active', 'category', 'qty', 'price', 'exp'];
-
             for (let i = 1; i < lines.length; i++) {
                 // تقسيم الصفوف مع دعم النصوص داخل علامات التنصيص
                 const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.trim().replace(/"/g, ''));
 
                 if (values.length >= 6) { 
                     const item = {};
-                    // تعيين القيم بترتيب ثابت بغض النظر عن لغة رأس العمود في الملف
+                    // تعيين القيم بترتيب ثابت
                     item.name = values[0];
-                    item.active = values[1] || ''; // المادة الفعالة
-                    item.category = values[2] || 'أخرى'; // التصنيف
-                    item.qty = Number(values[3]) || 0; // الكمية
-                    item.price = Number(values[4]) || 0; // السعر
-                    item.exp = values[5]; // تاريخ الانتهاء
+                    item.active = values[1] || ''; 
+                    item.category = values[2] || 'أخرى'; 
+                    item.qty = Number(values[3]) || 0; 
+                    item.price = Number(values[4]) || 0; 
+                    item.exp = values[5]; 
                     
                     if (item.name && item.exp) {
                         data.push(item);
@@ -650,10 +647,11 @@
             return data;
         }
 
-        // --- 6. التصدير إلى Excel (CSV) (إصلاح وتطوير) ---
+        // --- 6. التصدير إلى Excel (CSV) (التصحيح النهائي) ---
         function exportToExcel() {
             let csv = [];
-            // رؤوس الأعمدة يجب أن تكون بنفس ترتيب الاستيراد
+            
+            // رؤوس الأعمدة (يجب أن تكون بنفس ترتيب الاستيراد)
             const headers = [
                 translations[currentLang].tableDrugName, 
                 translations[currentLang].tableActiveIngredient, 
@@ -661,7 +659,7 @@
                 translations[currentLang].tableQty, 
                 translations[currentLang].tablePrice, 
                 translations[currentLang].tableExpiryDate
-            ].map(h => h.replace(/(\(|\))/g, '')).join(','); // إزالة الأقواس لتسهيل الاستيراد
+            ].map(h => h.replace(/(\(|\))/g, '')).join(','); 
             csv.push(headers);
 
             inventory.forEach(item => {
@@ -677,15 +675,24 @@
                 csv.push(row);
             });
 
-            // إضافة \ufeff لدعم UTF-8 (العربية) في Excel
-            const csvFile = new Blob(["\ufeff" + csv.join('\n')], { type: "text/csv;charset=utf-8;" }); 
+            // استخدام \ufeff لدعم UTF-8 (العربية) في Excel
+            const csvContent = "\ufeff" + csv.join('\n');
+            const csvFile = new Blob([csvContent], { type: "text/csv;charset=utf-8;" }); 
+            
+            // إنشاء رابط التنزيل
             const link = document.createElement("a");
-            link.href = URL.createObjectURL(csvFile);
+            const url = URL.createObjectURL(csvFile);
+            
+            link.href = url;
             link.download = translations[currentLang].exportFileName + '.csv';
+            
+            // تنزيل الملف
             document.body.appendChild(link);
             link.click();
+            
+            // تنظيف وتحرير الذاكرة
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // تحرير الذاكرة
+            URL.revokeObjectURL(url); 
         }
         
         // --- تهيئة النظام عند التحميل ---
