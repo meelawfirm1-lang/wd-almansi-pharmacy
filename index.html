@@ -299,14 +299,24 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-chart-bar"></i> <span data-translate="valueChartTitle">قيمة المخزون بالعملات</span></h5>
+                    <h5 class="modal-title"><i class="fas fa-chart-pie"></i> <span data-translate="valueChartTitle">قيمة المخزون بالعملات</span></h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    
+                    <div class="alert alert-info d-flex justify-content-between">
+                        <span data-translate="totalSDGValueText">القيمة الإجمالية (ج.س):</span>
+                        <strong id="totalSDGDisplay" class="text-primary">0 SDG</strong>
+                    </div>
+                    <div class="alert alert-success d-flex justify-content-between">
+                        <span data-translate="totalUSDValueText">القيمة الإجمالية (دولار):</span>
+                        <strong id="totalUSDDisplay" class="text-success">0 USD</strong>
+                    </div>
+
                     <div class="mb-3">
-                        <label for="exchangeRateInput" class="form-label" data-translate="exchangeRateLabel">سعر الصرف (SDG لكل 1 USD)</label>
-                        <input type="number" id="exchangeRateInput" class="form-control" value="1000" min="1" onchange="calculateAndDrawValueChart()" onkeyup="calculateAndDrawValueChart()">
-                        <small class="form-text text-muted" data-translate="exchangeRateNote">يستخدم لحساب قيمة المخزون بالدولار.</small>
+                        <label for="exchangeRateInput" class="form-label" data-translate="exchangeRateLabel">سعر الصرف (قيمة الدولار الواحد مقابل الجنيه السوداني)</label>
+                        <input type="number" id="exchangeRateInput" class="form-control" value="3000" min="1" onchange="calculateAndDrawValueChart()" onkeyup="calculateAndDrawValueChart()">
+                        <small class="form-text text-muted" data-translate="exchangeRateNoteUpdate">مثال: إذا كان 1 USD يساوي 3000 SDG، أدخل 3000. يتم استخدام هذا لحساب قيمة المخزون بالدولار.</small>
                     </div>
                     <canvas id="currencyValueChart"></canvas>
                 </div>
@@ -342,7 +352,12 @@
                 countdownTitle: 'تنبيه: العد التنازلي للانتهاء (30 يوماً)', countdownText: 'يوم/أيام متبقية', inventoryStatusTitle: 'حالة المخزون حسب الانتهاء',
                 countdownNoItems: 'لا توجد أدوية تنتهي خلال الثلاثين يوماً القادمة.',
                 daysLeft: 'يوم متبقي',
-                valueChartTitle: 'قيمة المخزون بالعملات', exchangeRateLabel: 'سعر الصرف (SDG لكل 1 USD)', exchangeRateNote: 'يستخدم لحساب قيمة المخزون بالدولار.',
+                valueChartTitle: 'قيمة المخزون بالعملات', 
+                exchangeRateLabel: 'سعر الصرف (قيمة الدولار الواحد مقابل الجنيه السوداني)', 
+                exchangeRateNote: 'يستخدم لحساب قيمة المخزون بالدولار.',
+                exchangeRateNoteUpdate: 'مثال: إذا كان 1 USD يساوي 3000 SDG، أدخل 3000. يتم استخدام هذا لحساب قيمة المخزون بالدولار.',
+                totalSDGValueText: 'القيمة الإجمالية (ج.س)',
+                totalUSDValueText: 'القيمة الإجمالية (دولار)',
             },
             en: {
                 appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
@@ -364,7 +379,12 @@
                 countdownTitle: 'Alert: Expiry Countdown (30 Days)', countdownText: 'days left', inventoryStatusTitle: 'Inventory Status by Expiry',
                 countdownNoItems: 'No items expiring in the next 30 days.',
                 daysLeft: 'days left',
-                valueChartTitle: 'Stock Value by Currency', exchangeRateLabel: 'Exchange Rate (SDG per 1 USD)', exchangeRateNote: 'Used to calculate stock value in USD.',
+                valueChartTitle: 'Stock Value by Currency', 
+                exchangeRateLabel: 'Exchange Rate (Value of 1 USD in SDG)', 
+                exchangeRateNote: 'Used to calculate stock value in USD.',
+                exchangeRateNoteUpdate: 'Example: If 1 USD equals 3000 SDG, enter 3000. Used to calculate stock value in USD.',
+                totalSDGValueText: 'Total Value (SDG)',
+                totalUSDValueText: 'Total Value (USD)',
             }
         };
 
@@ -597,68 +617,84 @@
 
         // --- 5. وظيفة رسم قيمة المخزون بالعملات (USD/SDG) ---
         let totalSDGValue = 0; // يتم تحديثها في updateReports
+        let currencyValueChartInstance = null; // للتأكد من إعادة إنشاء الرسم البياني
         
         function calculateTotalSDG() {
              totalSDGValue = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
              return totalSDGValue;
         }
 
+        // دالة مساعدة لتنسيق الأرقام الكبيرة (مثل 3.5 مليون)
+        function formatLargeNumber(value, currency) {
+            if (value >= 1000000) {
+                return (value / 1000000).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' M ' + currency;
+            } else if (value >= 1000) {
+                return (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' K ' + currency;
+            }
+            return value.toLocaleString(undefined, { maximumFractionDigits: (currency === 'USD' ? 2 : 0) }) + ' ' + currency;
+        }
+
+
         function calculateAndDrawValueChart() {
             const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || 1;
             const totalSDG = calculateTotalSDG();
             const totalUSD = totalSDG / exchangeRate;
             
-            const labels = ['SDG', 'USD'];
-            const data = [totalSDG, totalUSD];
+            // تحديث عرض القيم في اللوحة
+            document.getElementById('totalSDGDisplay').textContent = formatLargeNumber(totalSDG, 'SDG');
+            document.getElementById('totalUSDDisplay').textContent = formatLargeNumber(totalUSD, 'USD');
+            
+            const labels = [
+                (currentLang === 'ar' ? 'قيمة المخزون (ج.س)' : 'Stock Value (SDG)'),
+                (currentLang === 'ar' ? 'قيمة المخزون (دولار)' : 'Stock Value (USD)')
+            ];
             
             // إيقاف وتدمير الرسم البياني السابق
             if (currencyValueChartInstance) currencyValueChartInstance.destroy();
 
             currencyValueChartInstance = new Chart(document.getElementById('currencyValueChart'), {
-                type: 'bar',
+                type: 'doughnut', // تم التغيير إلى دائري
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: translations[currentLang].totalValue,
-                        data: data,
+                        data: [totalSDG, totalUSD], // البيانات هي القيمة الإجمالية في كل عملة
                         backgroundColor: ['#3498db', '#2ecc71'], 
-                        borderColor: ['#3498db', '#2ecc71'], 
-                        borderWidth: 1
+                        hoverOffset: 4
                     }]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: currentLang === 'ar' ? 'القيمة الإجمالية' : 'Total Value'
-                            },
-                            // استخدام صيغة عرض مختلفة للمحور لتناسب الأرقام الكبيرة
-                            ticks: {
-                                callback: function(value, index, values) {
-                                    if (index === 0) return value.toLocaleString() + ' SDG';
-                                    if (index === 1) return value.toLocaleString() + ' USD';
-                                    return value.toLocaleString();
+                    plugins: {
+                        legend: {
+                            position: currentLang === 'ar' ? 'left' : 'right',
+                            labels: {
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            const currency = (i === 0) ? 'SDG' : 'USD';
+                                            return {
+                                                text: `${label}: ${formatLargeNumber(value, currency)}`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].backgroundColor[i],
+                                                lineWidth: 1,
+                                                hidden: isNaN(value),
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
                                 }
                             }
-                        }
-                    },
-                    plugins: {
+                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.dataIndex === 0) {
-                                        label += context.parsed.y.toLocaleString() + ' SDG';
-                                    } else {
-                                        label += context.parsed.y.toLocaleString() + ' USD';
-                                    }
-                                    return label;
+                                    const value = context.parsed;
+                                    const currency = (context.dataIndex === 0) ? 'SDG' : 'USD';
+                                    const label = context.label || '';
+                                    return `${label}: ${value.toLocaleString(undefined, { maximumFractionDigits: (context.dataIndex === 1 ? 2 : 0) })} ${currency}`;
                                 }
                             }
                         }
