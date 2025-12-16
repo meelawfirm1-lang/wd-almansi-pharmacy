@@ -69,6 +69,10 @@
             </div>
             <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2">
                 
+                <button onclick="showFullInventoryReport()" class="btn btn-outline-light btn-sm" data-translate="fullReport">
+                    <i class="fas fa-list-alt"></i> تقرير الوحدات الكامل
+                </button>
+                
                 <button onclick="toggleLanguage()" class="btn btn-outline-light btn-sm" id="langToggleBtn">
                     <i class="fas fa-globe"></i> <span data-translate="langSwitch">English</span>
                 </button>
@@ -326,6 +330,45 @@
             </div>
         </div>
     </div>
+    
+    <div class="modal fade" id="fullReportModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title"><i class="fas fa-file-alt"></i> <span data-translate="reportModalTitle">تقرير شامل لجميع الوحدات</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end mb-3">
+                        <button onclick="exportReportToText()" class="btn btn-success btn-custom" data-translate="exportText">
+                            <i class="fas fa-file-export"></i> تصدير كملف نصي (.txt)
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr class="table-primary">
+                                    <th data-translate="tableDrugName">اسم الدواء</th>
+                                    <th data-translate="tableActiveIngredient">المادة الفعالة</th>
+                                    <th data-translate="tableCategory">التصنيف</th>
+                                    <th data-translate="tableQty">الكمية المتبقية</th>
+                                    <th data-translate="tablePrice">سعر الوحدة (ج.س)</th>
+                                    <th>قيمة الصنف (ج.س)</th>
+                                    <th data-translate="tableExpiryDate">تاريخ الانتهاء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullReportBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -358,6 +401,10 @@
                 exchangeRateNoteUpdate: 'مثال: إذا كان 1 USD يساوي 3000 SDG، أدخل 3000. يتم استخدام هذا لحساب قيمة المخزون بالدولار.',
                 totalSDGValueText: 'القيمة الإجمالية (ج.س)',
                 totalUSDValueText: 'القيمة الإجمالية (دولار)',
+                fullReport: 'تقرير الوحدات الكامل', 
+                reportModalTitle: 'تقرير شامل لجميع الوحدات',
+                exportText: 'تصدير كملف نصي (.txt)',
+                textExportFileName: 'تقرير-الوحدات-النصي',
             },
             en: {
                 appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
@@ -385,6 +432,10 @@
                 exchangeRateNoteUpdate: 'Example: If 1 USD equals 3000 SDG, enter 3000. Used to calculate stock value in USD.',
                 totalSDGValueText: 'Total Value (SDG)',
                 totalUSDValueText: 'Total Value (USD)',
+                fullReport: 'Full Inventory Report',
+                reportModalTitle: 'Comprehensive Unit Report',
+                exportText: 'Export as Text File (.txt)',
+                textExportFileName: 'Inventory-Report-Text',
             }
         };
 
@@ -1002,6 +1053,7 @@
             const data = [];
             
             for (let i = 1; i < lines.length; i++) {
+                // محاولة التعامل مع الفواصل داخل علامات الاقتباس
                 const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.trim().replace(/"/g, ''));
 
                 if (values.length >= 6) { 
@@ -1061,6 +1113,118 @@
             
             document.body.removeChild(link);
             URL.revokeObjectURL(url); 
+        }
+
+        // --- 11. وظائف تقرير الوحدات الكامل والتصدير النصي ---
+        
+        function showFullInventoryReport() {
+            const tbody = document.getElementById('fullReportBody');
+            tbody.innerHTML = '';
+            let totalInventoryValue = 0;
+
+            inventory.forEach(item => {
+                const itemValue = item.price * item.qty;
+                totalInventoryValue += itemValue;
+                
+                // تحديد حالة الانتهاء للعرض
+                const today = new Date();
+                const expiryDate = new Date(item.exp);
+                let expiryClass = '';
+                if (expiryDate < today) {
+                    expiryClass = 'expired';
+                } else if (expiryDate < new Date().setMonth(new Date().getMonth() + 3)) {
+                    expiryClass = 'soon-expired';
+                }
+
+                const row = `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.active}</td>
+                        <td>${getTranslatedCategoryName(item.category)}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.price.toLocaleString()}</td>
+                        <td>${itemValue.toLocaleString()}</td>
+                        <td class="${expiryClass}">${item.exp}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            
+            // إضافة سطر الإجمالي
+            const footerRow = `
+                <tr class="table-success fw-bold">
+                    <td colspan="5" class="text-end">${currentLang === 'ar' ? 'الإجمالي العام للقيمة' : 'Total Inventory Value'}</td>
+                    <td>${totalInventoryValue.toLocaleString()} ج.س</td>
+                    <td></td>
+                </tr>
+            `;
+            tbody.innerHTML += footerRow;
+
+            const modal = new bootstrap.Modal(document.getElementById('fullReportModal'));
+            modal.show();
+        }
+
+        function exportReportToText() {
+            let reportContent = '';
+            const separator = '------------------------------------------------------------';
+            const headers = [
+                translations[currentLang].tableDrugName, 
+                translations[currentLang].tableActiveIngredient, 
+                translations[currentLang].tableCategory, 
+                translations[currentLang].tableQty, 
+                translations[currentLang].tablePrice, 
+                currentLang === 'ar' ? 'قيمة الصنف (ج.س)' : 'Item Value (SDG)',
+                translations[currentLang].tableExpiryDate
+            ];
+            
+            // بناء رأس التقرير
+            reportContent += translations[currentLang].reportModalTitle + '\n';
+            reportContent += separator + '\n';
+            
+            // حساب المسافات اللازمة لكل عمود
+            const maxLen = 20; 
+            const headerLine = headers.map(h => h.padEnd(maxLen)).join(' | ');
+            reportContent += headerLine + '\n';
+            reportContent += separator.repeat(headers.length) + '\n';
+
+            let totalInventoryValue = 0;
+
+            // بناء جسم التقرير
+            inventory.forEach(item => {
+                const itemValue = item.price * item.qty;
+                totalInventoryValue += itemValue;
+                
+                const row = [
+                    item.name,
+                    item.active,
+                    getTranslatedCategoryName(item.category),
+                    item.qty,
+                    item.price.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+                    itemValue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+                    item.exp
+                ];
+                
+                // تنسيق الصفوف
+                reportContent += row.map(cell => String(cell).padEnd(maxLen)).join(' | ') + '\n';
+            });
+
+            reportContent += separator.repeat(headers.length) + '\n';
+            reportContent += `${currentLang === 'ar' ? 'الإجمالي العام للقيمة' : 'Total Inventory Value'}: ${totalInventoryValue.toLocaleString(undefined, { maximumFractionDigits: 0 })} ج.س\n`;
+            reportContent += separator.repeat(headers.length) + '\n';
+            reportContent += `Date: ${new Date().toLocaleString()}`;
+
+
+            // إنشاء وتنزيل الملف
+            const blob = new Blob([reportContent], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fileName = translations[currentLang].textExportFileName + '-' + new Date().toISOString().split('T')[0] + '.txt';
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
         
         // --- تهيئة النظام عند التحميل ---
