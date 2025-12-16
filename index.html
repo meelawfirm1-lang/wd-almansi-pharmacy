@@ -1,228 +1,751 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إدارة مخزون الصيدلية</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة مخزون الصيدلية - v2.3</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0f9b0f;
+            --bg-light: #f4f6f9;
+            --card-radius: 16px;
+        }
 
-<style>
-body{background:#f4f6f9}
-.stat-card{background:#fff;border-radius:16px;padding:15px;cursor:pointer}
-</style>
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- Login Screen Styling --- */
+        #loginSection {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100vh;
+            background: linear-gradient(135deg, #0f9b0f, #004d00);
+            z-index: 9999;
+            display: flex; /* Default display */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Header & Navigation --- */
+        .mobile-header {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-tool {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: #f8f9fa;
+            color: #333;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .btn-tool:active { transform: scale(0.9); background: #e2e6ea; }
+
+        .btn-main-add {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(15, 155, 15, 0.3);
+            border: none;
+        }
+
+        /* --- Stats Grid --- */
+        .stat-card {
+            background: white;
+            border-radius: var(--card-radius);
+            padding: 15px;
+            height: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border-bottom: 4px solid transparent;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .stat-card:active { transform: scale(0.98); }
+        
+        .border-success { border-bottom-color: #198754 !important; }
+        .border-primary { border-bottom-color: #0d6efd !important; }
+        .border-danger  { border-bottom-color: #dc3545 !important; }
+        .border-warning { border-bottom-color: #ffc107 !important; }
+
+        /* --- Inventory List --- */
+        .item-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .badge-qty {
+            background: #e9ecef; color: #333;
+            padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;
+        }
+
+        /* --- AI Camera --- */
+        .camera-trigger {
+            border: 2px dashed #0d6efd;
+            background: #f8f9fa;
+            color: #0d6efd;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px;
+            position: relative;
+        }
+        .camera-input {
+            position: absolute; top:0; left:0; width:100%; height:100%; opacity:0;
+        }
+
+        /* Helper Utility to hide/show */
+        .d-none-custom { display: none !important; }
+        
+        /* New Styles for Exchange Rate and Profit */
+        #exchangeRateContainer {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .profit-calculator {
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0fdf4; /* Light green background */
+        }
+    </style>
 </head>
-
 <body>
 
-<!-- LOGIN -->
-<div id="loginSection" class="vh-100 d-flex justify-content-center align-items-center bg-success">
-<div class="card p-4 text-center" style="width:300px">
-<h4>إدارة مخزون الصيدلية</h4>
-<input id="passInput" type="password" class="form-control mb-2" placeholder="الرمز">
-<button class="btn btn-success w-100" onclick="attemptLogin()">دخول</button>
-<p id="loginError" class="text-danger d-none">خطأ</p>
-</div>
-</div>
+    <div id="loginSection">
+        <div class="card p-4 text-center rounded-4 shadow" style="width: 90%; max-width: 320px;">
+            <div class="mb-3 text-success"><i class="fas fa-mortar-pestle fa-3x"></i></div>
+            <h4 class="fw-bold mb-1">إدارة مخزون الصيدلية</h4>
+            <small class="text-muted mb-4">نظام ود المنسي</small>
+            
+            <input type="password" id="passInput" class="form-control text-center rounded-pill mb-3" placeholder="أدخل الرمز السري">
+            <button onclick="attemptLogin()" class="btn btn-success w-100 rounded-pill fw-bold">تسجيل الدخول</button>
+            <p id="loginError" class="text-danger mt-2 small d-none">كلمة المرور غير صحيحة</p>
+        </div>
+    </div>
 
-<!-- DASHBOARD -->
-<div id="mainDashboard" class="d-none">
+    <div id="mainDashboard" class="d-none-custom">
+        
+        <div class="mobile-header">
+            <div class="dropdown">
+                <button class="btn-tool" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <ul class="dropdown-menu shadow border-0 rounded-3">
+                    <li><h6 class="dropdown-header">إدارة البيانات</h6></li>
+                    <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> نسخ احتياطي (JSON)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> استعادة (JSON)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="document.getElementById('importExcelFile').click()"><i class="fas fa-file-excel text-success"></i> إضافة بيانات من Excel</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</a></li>
+                </ul>
+                <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)" accept=".json">
+                <input type="file" id="importExcelFile" style="display:none" onchange="importExcelData(this)" accept=".xlsx, .xls">
+            </div>
 
-<div class="container mt-3">
+            <h5 class="m-0 fw-bold text-success">إدارة مخزون الصيدلية</h5>
 
-<div class="row g-2">
-<div class="col-6">
-<div class="stat-card border border-success" onclick="showItemsReport()">
-<h6>الأصناف</h6>
-<h3 id="statCount">0</h3>
-</div>
-</div>
+            <button onclick="openAddModal()" class="btn-main-add">
+                <i class="fas fa-plus"></i> إضافة
+            </button>
+        </div>
 
-<div class="col-6">
-<div class="stat-card border border-primary" onclick="showValueReport()">
-<h6>القيمة</h6>
-<h3 id="statValue">0</h3>
-</div>
-</div>
+        <div class="container-fluid p-3 pb-5">
+            
+            <div id="exchangeRateContainer" class="d-flex align-items-center justify-content-between">
+                <label for="exchangeRateInput" class="small fw-bold m-0 text-muted"><i class="fas fa-dollar-sign text-success"></i> سعر الدولار (SDG):</label>
+                <input type="number" id="exchangeRateInput" onchange="updateExchangeRate(this.value)" class="form-control form-control-sm text-center" style="width: 100px;">
+            </div>
 
-<div class="col-6">
-<div class="stat-card border border-danger" onclick="showExpiryReport()">
-<h6>سينتهي قريباً</h6>
-<h3 id="statExp">0</h3>
-</div>
-</div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="stat-card border-success" onclick="openChartModal('items')">
+                        <i class="fas fa-pills text-success fa-2x mb-2 opacity-50"></i>
+                        <h6 class="text-muted small mb-1">إجمالي الأصناف</h6>
+                        <h4 class="fw-bold m-0" id="statCount">0</h4>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-primary" onclick="openChartModal('value')">
+                        <i class="fas fa-coins text-primary fa-2x mb-2 opacity-50"></i>
+                        <h6 class="text-muted small mb-1">القيمة الإجمالية</h6>
+                        <h5 class="fw-bold m-0" id="statValue">0</h5>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-danger" onclick="openChartModal('expiry')">
+                        <i class="fas fa-hourglass-half text-danger fa-2x mb-2 opacity-50"></i>
+                        <h6 class="text-muted small mb-1">سينتهي قريباً</h6>
+                        <h4 class="fw-bold m-0 text-danger" id="statExp">0</h4>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-warning" onclick="openChartModal('stock')">
+                        <i class="fas fa-battery-quarter text-warning fa-2x mb-2 opacity-50"></i>
+                        <h6 class="text-muted small mb-1">النواقص</h6>
+                        <h4 class="fw-bold m-0 text-warning" id="statLow">0</h4>
+                    </div>
+                </div>
+            </div>
 
-<div class="col-6">
-<div class="stat-card border border-warning" onclick="showLowStock()">
-<h6>النواقص</h6>
-<h3 id="statLow">0</h3>
-</div>
-</div>
-</div>
+            <div class="input-group shadow-sm rounded-4 overflow-hidden bg-white mb-3">
+                <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="searchInput" onkeyup="renderList()" class="form-control border-0 p-2" placeholder="بحث بالاسم أو المادة الفعالة...">
+            </div>
 
-<hr>
+            <div id="inventoryContainer"></div>
+        </div>
+    </div>
 
-<button class="btn btn-success w-100" onclick="openAddModal()">إضافة صنف</button>
+    <div class="modal fade" id="itemModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">بيانات الدواء</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="camera-trigger mb-3">
+                        <i class="fas fa-camera fa-2x mb-2"></i><br>
+                        <span>اضغط لتصوير العلبة (AI)</span>
+                        <input type="file" class="camera-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
+                        <div id="ocrLoading" class="text-primary mt-2 small d-none">جاري قراءة البيانات...</div>
+                    </div>
 
-<div id="inventoryContainer" class="mt-3"></div>
+                    <input type="hidden" id="editIndex">
+                    <div class="form-floating mb-2">
+                        <input type="text" class="form-control" id="inpName" placeholder="الاسم">
+                        <label>اسم الدواء</label>
+                    </div>
+                    
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="form-floating mb-2">
+                                <input type="number" class="form-control" id="inpQty" placeholder="الكمية">
+                                <label>الكمية</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-floating mb-2">
+                                <input type="number" class="form-control" id="inpBuyPrice" placeholder="الشراء" oninput="calculateProfit()">
+                                <label>سعر الشراء</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profit-calculator mb-3">
+                        <label for="profitRange" class="form-label small fw-bold text-success mb-1">
+                            نسبة الربح: <span id="profitValue">20%</span>
+                        </label>
+                        <input type="range" class="form-range" min="1" max="100" value="20" id="profitRange" oninput="calculateProfit()">
+                        <div class="form-floating">
+                            <input type="number" class="form-control bg-white" id="inpPrice" placeholder="البيع" readonly>
+                            <label>سعر البيع (محسوب)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-2">
+                        <input type="date" class="form-control" id="inpExp" placeholder="التاريخ">
+                        <label>تاريخ الانتهاء</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="inpActive" placeholder="المادة">
+                        <label>المادة الفعالة (اختياري)</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button onclick="saveItem()" class="btn btn-success w-100 rounded-pill py-2 fw-bold">حفظ البيانات</button>
+                    <button onclick="deleteItem()" id="btnDelete" class="btn btn-outline-danger w-100 rounded-pill py-2 d-none">حذف</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-</div>
-</div>
+    <div class="modal fade" id="chartModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold" id="chartTitle">تحليل</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 class="text-primary fw-bold mb-3" id="chartMainValue"></h3>
+                    
+                    <div style="height: 250px; margin-bottom: 20px;">
+                        <canvas id="theChart"></canvas>
+                    </div>
+                    
+                    <div id="reportDetails" class="text-start">
+                        <h6 class="text-muted fw-bold mb-2 border-bottom pb-1" id="reportHeader"></h6>
+                        <ol id="detailedList" class="list-group list-group-numbered small"></ol>
+                        <p class="mt-3 small text-muted" id="reportFooter"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- ADD / EDIT -->
-<div class="modal fade" id="itemModal">
-<div class="modal-dialog">
-<div class="modal-content p-3">
-<input type="hidden" id="editIndex">
+    <script>
+        // --- 1. System Setup ---
+        const SYS_PASS = "123456";
+        let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];
+        let chartInstance = null;
+        let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000; // سعر الصرف الافتراضي
 
-<input id="inpName" class="form-control mb-2" placeholder="اسم الدواء">
-<input id="inpQty" type="number" class="form-control mb-2" placeholder="الكمية">
-<input id="inpBuy" type="number" class="form-control mb-2" placeholder="سعر الشراء">
+        // تحميل سعر الصرف عند بدء التشغيل
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('exchangeRateInput').value = exchangeRate;
+            refreshUI();
+        });
 
-<label>نسبة الزيادة</label>
-<input type="range" min="1" max="100" value="20" class="form-range" id="profitRange">
-<small id="profitLabel">20%</small>
+        // --- 2. Authentication Logic ---
+        function attemptLogin() {
+            const pass = document.getElementById('passInput').value;
+            if(pass === SYS_PASS) {
+                // Hide Login, Show Dashboard strictly
+                document.getElementById('loginSection').classList.add('d-none-custom');
+                document.getElementById('mainDashboard').classList.remove('d-none-custom');
+                refreshUI();
+            } else {
+                document.getElementById('loginError').classList.remove('d-none');
+            }
+        }
 
-<input id="inpPrice" type="number" class="form-control mb-2" placeholder="سعر البيع">
-<input id="inpExp" type="date" class="form-control mb-2">
+        function logout() {
+            if(confirm('تأكيد الخروج؟')) location.reload();
+        }
 
-<button class="btn btn-success w-100" onclick="saveItem()">حفظ</button>
-<button class="btn btn-danger w-100 mt-1 d-none" id="btnDelete" onclick="deleteItem()">حذف</button>
-</div>
-</div>
-</div>
+        // --- 3. Core UI Functions ---
+        function refreshUI() {
+            renderList();
+            calculateStats();
+        }
 
-<!-- REPORT -->
-<div class="modal fade" id="reportModal">
-<div class="modal-dialog modal-lg modal-dialog-scrollable">
-<div class="modal-content">
-<div class="modal-header">
-<h5 id="reportTitle"></h5>
-<button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body" id="reportBody"></div>
-</div>
-</div>
-</div>
+        // تحديث سعر الصرف وحفظه
+        function updateExchangeRate(value) {
+            exchangeRate = Number(value);
+            localStorage.setItem('wm_exchange_rate', exchangeRate);
+            calculateStats(); // إعادة حساب القيم المالية
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        function renderList() {
+            const container = document.getElementById('inventoryContainer');
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            
+            container.innerHTML = '';
+            
+            const filtered = db.filter(item => 
+                item.name.toLowerCase().includes(term) || 
+                (item.active && item.active.toLowerCase().includes(term))
+            );
 
-<script>
-/* ===== DATA ===== */
-const SYS_PASS="123456";
-let db=JSON.parse(localStorage.getItem("db"))||[];
-let usdRate=Number(localStorage.getItem("usd"))||1000;
+            filtered.forEach((item, index) => {
+                const realIndex = db.indexOf(item);
+                const daysLeft = Math.ceil((new Date(item.exp) - new Date()) / (1000*60*60*24));
+                let statusIcon = '';
+                if(daysLeft < 0) statusIcon = '<i class="fas fa-skull text-danger" title="منتهي"></i>';
+                else if(daysLeft < 90) statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="قريب"></i>';
 
-/* ===== LOGIN ===== */
-function attemptLogin(){
-if(passInput.value===SYS_PASS){
-loginSection.classList.add("d-none");
-mainDashboard.classList.remove("d-none");
-refresh();
-}else loginError.classList.remove("d-none");
-}
+                container.innerHTML += `
+                    <div class="item-card" onclick="openEditModal(${realIndex})">
+                        <div>
+                            <div class="fw-bold text-dark">${item.name} ${statusIcon}</div>
+                            <small class="text-muted">ينتهي: ${item.exp}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge-qty">${item.qty}</span>
+                            <div class="small fw-bold text-success mt-1">${(item.price * item.qty).toLocaleString()} SDG</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
-/* ===== UI ===== */
-function refresh(){
-inventoryContainer.innerHTML="";
-db.forEach((i,idx)=>{
-inventoryContainer.innerHTML+=`
-<div class="card p-2 mb-1" onclick="openEdit(${idx})">
-<strong>${i.name}</strong>
-<span>كمية: ${i.qty}</span>
-</div>`;
-});
-statCount.innerText=db.length;
-statValue.innerText=db.reduce((a,b)=>a+b.price*b.qty,0);
-statLow.innerText=db.filter(i=>i.qty<5).length;
-statExp.innerText=db.filter(i=>daysLeft(i.exp)<=90).length;
-}
+        function calculateStats() {
+            // Count
+            document.getElementById('statCount').innerText = db.length;
+            
+            // Value
+            const totalValSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);
+            document.getElementById('statValue').innerText = formatMoney(totalValSDG);
+            
+            // Expiry (90 days)
+            const today = new Date();
+            const warningDate = new Date(); warningDate.setDate(today.getDate() + 90);
+            const dangerCount = db.filter(i => new Date(i.exp) <= warningDate).length;
+            document.getElementById('statExp').innerText = dangerCount;
+            
+            // Low Stock
+            document.getElementById('statLow').innerText = db.filter(i => i.qty < 5).length;
+        }
 
-/* ===== HELPERS ===== */
-function daysLeft(d){return Math.ceil((new Date(d)-new Date())/86400000);}
+        function formatMoney(num) {
+            if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
+            if(num >= 1000) return (num/1000).toFixed(1) + 'K';
+            return num;
+        }
 
-/* ===== CRUD ===== */
-function openAddModal(){
-editIndex.value="";
-itemModal.show();
-}
+        // --- 4. Profit Calculation ---
+        function calculateProfit() {
+            const buyPrice = Number(document.getElementById('inpBuyPrice').value);
+            const profitPercentage = Number(document.getElementById('profitRange').value);
+            
+            document.getElementById('profitValue').innerText = profitPercentage + '%';
 
-function openEdit(i){
-editIndex.value=i;
-let x=db[i];
-inpName.value=x.name;
-inpQty.value=x.qty;
-inpBuy.value=x.buy;
-inpPrice.value=x.price;
-inpExp.value=x.exp;
-btnDelete.classList.remove("d-none");
-itemModal.show();
-}
+            if(buyPrice > 0) {
+                const sellPrice = buyPrice + (buyPrice * profitPercentage / 100);
+                document.getElementById('inpPrice').value = Math.round(sellPrice);
+            } else {
+                document.getElementById('inpPrice').value = 0;
+            }
+        }
 
-function saveItem(){
-let item={
-name:inpName.value,
-qty:+inpQty.value,
-buy:+inpBuy.value,
-price:+inpPrice.value,
-exp:inpExp.value
-};
-if(editIndex.value==="") db.push(item);
-else db[editIndex.value]=item;
-localStorage.setItem("db",JSON.stringify(db));
-itemModal.hide();
-refresh();
-}
+        // --- 5. CRUD Operations ---
+        function openAddModal() {
+            document.getElementById('editIndex').value = '';
+            document.getElementById('inpName').value = '';
+            document.getElementById('inpQty').value = '';
+            document.getElementById('inpBuyPrice').value = ''; // حقل الشراء الجديد
+            document.getElementById('inpPrice').value = '';
+            document.getElementById('inpExp').value = '';
+            document.getElementById('inpActive').value = '';
+            document.getElementById('profitRange').value = 20; // إعادة تعيين الربح
+            document.getElementById('profitValue').innerText = '20%';
+            document.getElementById('btnDelete').classList.add('d-none');
+            new bootstrap.Modal(document.getElementById('itemModal')).show();
+        }
 
-function deleteItem(){
-db.splice(editIndex.value,1);
-localStorage.setItem("db",JSON.stringify(db));
-itemModal.hide();
-refresh();
-}
+        function openEditModal(index) {
+            const item = db[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('inpName').value = item.name;
+            document.getElementById('inpQty').value = item.qty;
+            document.getElementById('inpBuyPrice').value = item.buyPrice || item.price; // استخدم سعر الشراء الجديد
+            document.getElementById('inpPrice').value = item.price; // هذا يمثل سعر البيع الآن
+            document.getElementById('inpExp').value = item.exp;
+            document.getElementById('inpActive').value = item.active || '';
+            document.getElementById('profitRange').value = 20; // يمكن حساب النسبة من (البيع/الشراء)
+            calculateProfit(); // حساب النسبة التلقائية أو استخدم القيمة المخزنة
+            document.getElementById('btnDelete').classList.remove('d-none');
+            new bootstrap.Modal(document.getElementById('itemModal')).show();
+        }
 
-/* ===== REPORTS ===== */
-function showItemsReport(){
-reportTitle.innerText="تقرير الأصناف";
-reportBody.innerHTML="<ol>"+db.map(i=>`<li>${i.name}</li>`).join("")+"</ol><hr>الإجمالي: "+db.length;
-reportModal.show();
-}
+        function saveItem() {
+            const idx = document.getElementById('editIndex').value;
+            const buyPrice = Number(document.getElementById('inpBuyPrice').value);
+            const sellPrice = Number(document.getElementById('inpPrice').value);
 
-function showValueReport(){
-let total=db.reduce((a,b)=>a+b.price*b.qty,0);
-reportTitle.innerText="تقرير القيمة";
-reportBody.innerHTML=`
-القيمة بالجنيه: ${total}<br>
-القيمة بالدولار: ${(total/usdRate).toFixed(2)}
-<hr>
-<input type="number" value="${usdRate}" onchange="usdRate=this.value;localStorage.setItem('usd',this.value)">
-`;
-reportModal.show();
-}
+            const newItem = {
+                name: document.getElementById('inpName').value,
+                qty: Number(document.getElementById('inpQty').value),
+                // تم تعديل حفظ البيانات ليدعم سعر الشراء والبيع
+                buyPrice: buyPrice,
+                price: sellPrice, // price now means SELL price
+                exp: document.getElementById('inpExp').value,
+                active: document.getElementById('inpActive').value
+            };
 
-function showExpiryReport(){
-reportTitle.innerText="قريب الانتهاء";
-reportBody.innerHTML=db.filter(i=>daysLeft(i.exp)<=90)
-.map(i=>`${i.name} – ${daysLeft(i.exp)} يوم`).join("<br>");
-reportModal.show();
-}
+            if(!newItem.name || !newItem.price || !newItem.buyPrice) return alert('أكمل البيانات الأساسية (الاسم، الشراء، البيع)');
 
-function showLowStock(){
-reportTitle.innerText="النواقص";
-reportBody.innerHTML=db.filter(i=>i.qty<5)
-.map(i=>`${i.name} – ${i.qty}`).join("<br>");
-reportModal.show();
-}
+            if(idx === '') {
+                db.push(newItem);
+            } else {
+                db[idx] = newItem;
+            }
+            
+            localStorage.setItem('wm_db_v23', JSON.stringify(db));
+            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+            refreshUI();
+        }
 
-/* ===== PROFIT ===== */
-profitRange.oninput=()=>{
-profitLabel.innerText=profitRange.value+"%";
-inpPrice.value=Math.round(inpBuy.value*(1+profitRange.value/100));
-}
-</script>
+        function deleteItem() {
+            const idx = document.getElementById('editIndex').value;
+            if(idx !== '' && confirm('حذف الصنف؟')) {
+                db.splice(idx, 1);
+                localStorage.setItem('wm_db_v23', JSON.stringify(db));
+                bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+                refreshUI();
+            }
+        }
 
+        // --- 6. Data & Charts/Reports Tools ---
+        function openChartModal(type) {
+            new bootstrap.Modal(document.getElementById('chartModal')).show();
+            const ctx = document.getElementById('theChart').getContext('2d');
+            const titleEl = document.getElementById('chartTitle');
+            const valEl = document.getElementById('chartMainValue');
+            const listEl = document.getElementById('detailedList');
+            const headerEl = document.getElementById('reportHeader');
+            const footerEl = document.getElementById('reportFooter');
+            
+            listEl.innerHTML = '';
+            headerEl.innerText = '';
+            footerEl.innerText = '';
+
+            if(chartInstance) chartInstance.destroy();
+
+            let config = { type: 'doughnut', data: {}, options: { maintainAspectRatio: false } };
+
+            if(type === 'items') {
+                titleEl.innerText = 'تقرير إجمالي الأصناف';
+                valEl.innerText = db.length.toLocaleString() + ' صنف';
+                headerEl.innerText = 'قائمة الأصناف المرقمة:';
+                
+                db.sort((a,b) => a.name.localeCompare(b.name, 'ar')); // فرز أبجدي
+                
+                db.forEach((item, i) => {
+                    listEl.innerHTML += `
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">${item.name}</div>
+                            <span class="badge bg-primary rounded-pill">${item.qty}</span>
+                        </li>
+                    `;
+                });
+                footerEl.innerText = `إجمالي عدد الأصناف في المخزون: ${db.length}`;
+                
+                // رسم بياني: توزيع الكميات حسب التصنيف (افتراضي)
+                const cats = {};
+                db.forEach(i => cats[i.active || 'غير مصنف'] = (cats[i.active || 'غير مصنف']||0) + i.qty);
+                config.data = {
+                    labels: Object.keys(cats),
+                    datasets: [{ data: Object.values(cats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
+                };
+            
+            } else if (type === 'value') {
+                titleEl.innerText = 'تحليل القيمة المالية';
+                const totalSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);
+                const totalUSD = totalSDG / exchangeRate;
+                
+                valEl.innerText = totalSDG.toLocaleString() + ' SDG';
+                headerEl.innerText = 'ملخص القيمة:';
+                
+                listEl.innerHTML = `
+                    <li class="list-group-item d-flex justify-content-between">الإجمالي بالجنيه السوداني (SDG): <b>${totalSDG.toLocaleString()}</b></li>
+                    <li class="list-group-item d-flex justify-content-between">الإجمالي بالدولار (USD): <b>${totalUSD.toFixed(2)}</b></li>
+                `;
+                footerEl.innerText = `سعر الصرف المستخدم: 1$ = ${exchangeRate.toLocaleString()} SDG.`;
+
+                // رسم بياني: توزيع القيمة (مبيعات)
+                const valueCats = {};
+                db.forEach(i => valueCats[i.active || 'غير مصنف'] = (valueCats[i.active || 'غير مصنف']||0) + (i.price * i.qty));
+                config.data = {
+                    labels: Object.keys(valueCats),
+                    datasets: [{ data: Object.values(valueCats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
+                };
+
+            } else if (type === 'expiry') {
+                titleEl.innerText = 'تقرير الأصناف القريبة من الانتهاء';
+                const today = new Date();
+                const warnDate = new Date(); warnDate.setDate(today.getDate()+90);
+                
+                const expiredAndSoon = db.filter(i => new Date(i.exp) <= warnDate).sort((a,b) => new Date(a.exp) - new Date(b.exp));
+                
+                const expiredCount = expiredAndSoon.filter(i => new Date(i.exp) < today).length;
+                valEl.innerText = `${expiredAndSoon.length} صنف في خطر`;
+                headerEl.innerText = 'قائمة الأصناف (منتهي وقريب):';
+
+                expiredAndSoon.forEach((item) => {
+                    const daysLeft = Math.ceil((new Date(item.exp) - today) / (1000*60*60*24));
+                    const statusText = daysLeft < 0 ? 
+                        `<span class="text-danger fw-bold">منتهي منذ ${Math.abs(daysLeft)} يوم</span>` : 
+                        `<span class="text-warning fw-bold">متبقي ${daysLeft} يوم</span>`;
+
+                    listEl.innerHTML += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="ms-2 me-auto">
+                                ${item.name} <small class="text-muted">(${item.exp})</small>
+                            </div>
+                            ${statusText}
+                        </li>
+                    `;
+                });
+                footerEl.innerText = `عدد الأصناف المنتهية: ${expiredCount}. يرجى اتخاذ الإجراء اللازم.`;
+
+                const soonCount = expiredAndSoon.length - expiredCount;
+                const safe = db.length - expiredAndSoon.length;
+                
+                config.data = {
+                    labels: ['منتهي', 'قريب', 'سليم'],
+                    datasets: [{ data: [expiredCount, soonCount, safe], backgroundColor: ['#dc3545', '#ffc107', '#198754'] }]
+                };
+
+            } else if (type === 'stock') {
+                titleEl.innerText = 'تقرير الأصناف الناقصة (أقل من 5)';
+                const lowStock = db.filter(i => i.qty < 5).sort((a,b) => a.qty - b.qty);
+                valEl.innerText = `${lowStock.length} صنف يحتاج شراء`;
+                headerEl.innerText = 'قائمة الأصناف الناقصة:';
+
+                lowStock.forEach((item) => {
+                    listEl.innerHTML += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="ms-2 me-auto">${item.name}</div>
+                            <span class="badge bg-danger rounded-pill">${item.qty} متبقي</span>
+                        </li>
+                    `;
+                });
+                footerEl.innerText = `عدد الأصناف التي تحتاج إعادة طلب: ${lowStock.length}.`;
+                
+                // رسم بياني: توزيع النواقص
+                const activeLow = {};
+                lowStock.forEach(i => activeLow[i.active || 'غير مصنف'] = (activeLow[i.active || 'غير مصنف']||0) + i.qty);
+                config.data = {
+                    labels: Object.keys(activeLow),
+                    datasets: [{ data: Object.values(activeLow), backgroundColor: ['#ffc107', '#dc3545', '#0d6efd', '#198754'] }]
+                };
+            }
+
+            chartInstance = new Chart(ctx, config);
+        }
+
+        // --- 7. Data Backup/Restore/Import ---
+        function backupData() {
+            const dataStr = JSON.stringify(db);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "inventory_backup_" + new Date().toISOString().slice(0,10) + ".json";
+            a.click();
+        }
+        
+        // دالة الدمج الذكي للبيانات المستوردة
+        function smartMerge(newData, mergeType) {
+            if(mergeType === 'replace') {
+                return newData;
+            }
+
+            if (mergeType === 'merge') {
+                newData.forEach(newItem => {
+                    const existingIndex = db.findIndex(item => item.name === newItem.name);
+                    if (existingIndex !== -1) {
+                        // الصنف موجود: قم بدمج الكمية
+                        db[existingIndex].qty += newItem.qty;
+                        // تحديث بيانات أخرى إذا لزم الأمر (مثل السعر أو التاريخ الأبعد)
+                        db[existingIndex].price = newItem.price || db[existingIndex].price;
+                        db[existingIndex].buyPrice = newItem.buyPrice || db[existingIndex].buyPrice;
+                        if (new Date(newItem.exp) > new Date(db[existingIndex].exp)) {
+                            db[existingIndex].exp = newItem.exp;
+                        }
+                    } else {
+                        // الصنف غير موجود: قم بإضافته
+                        db.push(newItem);
+                    }
+                });
+            } else if (mergeType === 'add_new') {
+                // إضافة كصنف جديد حتى لو كان الاسم مكرر
+                db = db.concat(newData);
+            }
+            return db;
+        }
+
+        function restoreData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const loaded = JSON.parse(e.target.result);
+                    
+                    const mergeOption = prompt('كيف تريد التعامل مع البيانات المستوردة؟\n1. merge (دمج مع الموجود)\n2. add_new (إضافة كصنف جديد)\n3. replace (استبدال بالكامل)', 'merge');
+                    
+                    if(mergeOption) {
+                        db = smartMerge(loaded, mergeOption.toLowerCase());
+                        localStorage.setItem('wm_db_v23', JSON.stringify(db));
+                        location.reload();
+                    }
+                } catch(err) { alert('ملف JSON غير صالح'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function importExcelData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    // تحويل بيانات الإكسل إلى تنسيق JSON (يجب أن تكون الرؤوس متطابقة: name, qty, price, exp, active)
+                    const json = XLSX.utils.sheet_to_json(worksheet, {
+                        header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'], // تحديد الرؤوس المتوقعة
+                        range: 1 // تجاهل الصف الأول كرؤوس إذا لم تكن مطابقة
+                    });
+
+                    // تنظيف وتحويل التواريخ والأرقام
+                    const loadedData = json.map(item => ({
+                        name: item.name || 'Unknown',
+                        qty: Number(item.qty) || 0,
+                        price: Number(item.price) || 0,
+                        buyPrice: Number(item.buyPrice) || Number(item.price) * 0.8, // تقدير
+                        exp: item.exp ? new Date(Math.round((item.exp - 25569) * 86400 * 1000)).toISOString().split('T')[0] : 'غير معروف', // تحويل تاريخ إكسل
+                        active: item.active || ''
+                    })).filter(item => item.name !== 'Unknown' && item.qty > 0);
+
+                    const mergeOption = prompt('كيف تريد التعامل مع بيانات Excel؟\n1. merge (دمج مع الموجود)\n2. add_new (إضافة كصنف جديد)', 'merge');
+                    
+                    if(mergeOption) {
+                        db = smartMerge(loadedData, mergeOption.toLowerCase());
+                        localStorage.setItem('wm_db_v23', JSON.stringify(db));
+                        location.reload();
+                    }
+                } catch(err) { 
+                    console.error(err);
+                    alert('فشل في استيراد ملف Excel. تأكد من أن التنسيق صحيح.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+
+        // --- 8. AI OCR ---
+        async function handleOCR(input) {
+            if(!input.files[0]) return;
+            document.getElementById('ocrLoading').classList.remove('d-none');
+            try {
+                const res = await Tesseract.recognize(input.files[0], 'eng+ara');
+                const text = res.data.text;
+                const lines = text.split('\n').filter(l => l.trim().length > 3);
+                if(lines.length > 0) document.getElementById('inpName').value = lines[0];
+                alert('تم استخراج النص، يرجى المراجعة وتعبئة الأرقام.');
+            } catch(e) { alert('فشل التعرف على الصورة'); }
+            document.getElementById('ocrLoading').classList.add('d-none');
+        }
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
