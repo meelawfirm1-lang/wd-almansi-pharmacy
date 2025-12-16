@@ -54,7 +54,7 @@
     <div id="loginSection" class="container">
         <div class="login-container text-center">
             <h3 class="mb-4 text-success"><i class="fas fa-clinic-medical"></i> <span data-translate="pharmacyName">صيدلية ود المنسي</span></h3>
-            <input type="password" id="passwordInput" class="form-control mb-3" data-translate="placeholderPassword" placeholder="أدخل كلمة المرور">
+            <input type="password" id="passwordInput" class="form-control mb-3" data-translate="placeholderPassword" placeholder="أدخل كلمة المرور" onkeypress="handleLoginEnter(event)">
             <button onclick="checkLogin()" class="btn btn-success w-100 btn-custom" data-translate="login">دخول</button>
             <p id="loginError" class="text-danger mt-2" style="display:none;" data-translate="loginError">كلمة المرور غير صحيحة!</p>
         </div>
@@ -187,11 +187,11 @@
                     <div class="mb-3"><label data-translate="labelActiveIngredient">المادة الفعالة</label><input type="text" id="itemActive" class="form-control"></div>
                     <div class="mb-3"><label data-translate="labelCategory">التصنيف</label>
                         <select id="itemCategory" class="form-select">
-                            <option data-translate="categoryPainkillers">مسكنات</option>
-                            <option data-translate="categoryAntibiotics">مضادات حيوية</option>
-                            <option data-translate="categoryVitamins">فيتامينات ومكملات</option>
-                            <option data-translate="categorySyrups">أدوية شراب</option>
-                            <option data-translate="categoryOthers">أخرى</option>
+                            <option data-translate="categoryPainkillers" value="مسكنات">مسكنات</option>
+                            <option data-translate="categoryAntibiotics" value="مضادات حيوية">مضادات حيوية</option>
+                            <option data-translate="categoryVitamins" value="فيتامينات ومكملات">فيتامينات ومكملات</option>
+                            <option data-translate="categorySyrups" value="أدوية شراب">أدوية شراب</option>
+                            <option data-translate="categoryOthers" value="أخرى">أخرى</option>
                         </select>
                     </div>
                     <div class="mb-3"><label data-translate="labelQty">الكمية المتبقية</label><input type="number" id="itemQty" class="form-control"></div>
@@ -394,9 +394,9 @@
         let currentTheme = localStorage.getItem('wadAlmansiTheme') || 'light';
         let inventory = JSON.parse(localStorage.getItem('wadAlmansiData')) || [];
         
-        // سعر الصرف الافتراضي
         const DEFAULT_EXCHANGE_RATE = 3000;
 
+        // مثيلات الرسوم البيانية
         let categoryChartInstance = null;
         let expiryChartInstance = null;
         let modalChartInstance = null; 
@@ -442,15 +442,26 @@
             applyTheme(currentTheme);
         }
 
-        // --- وظيفة التحكم بالدخول والخروج ---
+        // --- وظيفة التحكم بالدخول والخروج (تم الإصلاح) ---
         function checkLogin() {
-            const input = document.getElementById('passwordInput').value;
-            if(input === ADMIN_PASS) {
+            // استخدام .trim() لضمان إزالة أي مسافات زائدة
+            const input = document.getElementById('passwordInput').value.trim(); 
+            const errorElement = document.getElementById('loginError');
+
+            if (input === ADMIN_PASS) {
+                errorElement.style.display = 'none';
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('mainDashboard').style.display = 'block';
                 loadItems(); 
             } else {
-                document.getElementById('loginError').style.display = 'block';
+                errorElement.style.display = 'block';
+            }
+        }
+        
+        // دالة مساعدة لتسجيل الدخول عند الضغط على Enter
+        function handleLoginEnter(event) {
+            if (event.key === 'Enter') {
+                checkLogin();
             }
         }
 
@@ -460,38 +471,44 @@
         
         // --- 2. إدارة قاعدة البيانات (Local Storage) وتصنيف الأدوية ---
         
-        // أسماء التصنيفات الافتراضية للترجمة
-        const defaultCategories = ['مسكنات', 'مضادات حيوية', 'فيتامينات ومكملات', 'أدوية شراب', 'أخرى'];
+        const defaultCategoryKeys = ['categoryPainkillers', 'categoryAntibiotics', 'categoryVitamins', 'categorySyrups', 'categoryOthers'];
         
-        function getTranslatedCategoryName(categoryName) {
+        function getTranslatedCategoryName(categoryValue) {
             const lang = currentLang;
-            for (const key in translations[lang]) {
-                // البحث العكسي عن اسم التصنيف المطابق في القائمة الافتراضية
-                if (defaultCategories.includes(categoryName) && translations.ar[key] === categoryName && translations[lang][key]) {
-                     return translations[lang][key];
-                }
+            // البحث عن المفتاح الذي يحمل قيمة التصنيف (القيمة المخزنة)
+            const key = defaultCategoryKeys.find(k => translations['ar'][k] === categoryValue || translations['en'][k] === categoryValue);
+            
+            // إذا وُجد المفتاح، استخدم ترجمته باللغة الحالية
+            if (key) {
+                return translations[lang][key];
             }
-            return categoryName; // إذا لم يتم العثور على ترجمة، استخدم الاسم كما هو
+            return categoryValue; // إذا لم يُعثر عليه، استخدم القيمة الأصلية
         }
 
         function getUniqueCategories() {
-            return [...new Set(inventory.map(item => item.category))].filter(Boolean);
+            // نستخدم التصنيفات الافتراضية للوحدة، ونضيف أي تصنيف مخصص تم إدخاله
+            let uniqueCategories = new Set([
+                'مسكنات', 'مضادات حيوية', 'فيتامينات ومكملات', 'أدوية شراب', 'أخرى'
+            ]);
+            
+            inventory.map(item => item.category).filter(Boolean).forEach(cat => uniqueCategories.add(cat));
+            
+            return Array.from(uniqueCategories);
         }
         
         // تحسين دالة تحديث قائمة التصنيفات لتعمل مع الترجمة
         function updateCategoryOptions(lang) {
             const select = document.getElementById('categoryFilter');
+            const selectedValue = localStorage.getItem('categoryFilterValue') || '';
             select.innerHTML = `<option value="">${translations[lang].filterAll}</option>`;
             
             getUniqueCategories().forEach(cat => {
-                 // عرض اسم التصنيف باللغة الحالية، ولكن تخزين القيمة الأصلية للفلترة (أو العكس إذا كانت لغة الإدخال تتغير)
-                 // لحل مشكلة التعريب، نستخدم القيمة المخزنة (باللغة التي تم إدخالها بها) كـ value 
-                 // ونستخدم اسم التصنيف المترجم كـ text
+                 // استخدام القيمة المخزنة (cat) كـ value
+                 // وعرض اسم التصنيف المترجم (getTranslatedCategoryName(cat)) كـ text
                  select.innerHTML += `<option value="${cat}">${getTranslatedCategoryName(cat)}</option>`;
             });
             
-            const filterValue = localStorage.getItem('categoryFilterValue') || '';
-            select.value = filterValue;
+            select.value = selectedValue;
         }
 
         function saveData() {
@@ -536,7 +553,7 @@
                         <td>${item.active}</td>
                         <td>${getTranslatedCategoryName(item.category)}</td> 
                         <td class="${qtyClass}">${item.qty}</td>
-                        <td class="${item.qty < 5 ? 'text-danger fw-bold' : ''}">${item.price}</td>
+                        <td class="${item.qty < 5 ? 'text-danger fw-bold' : ''}">${item.price.toLocaleString()}</td>
                         <td class="${expiryClass}">${item.exp}</td>
                         <td>
                             <button onclick="editItem(${index})" class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
@@ -555,6 +572,7 @@
             const id = document.getElementById('itemId').value;
             const name = document.getElementById('itemName').value;
             const active = document.getElementById('itemActive').value; 
+            // نأخذ القيمة المخزنة مباشرة من الـ Select (باللغة العربية الافتراضية)
             const category = document.getElementById('itemCategory').value; 
             const qty = document.getElementById('itemQty').value;
             const price = document.getElementById('itemPrice').value;
@@ -562,7 +580,6 @@
 
             if(name === '' || qty === '' || price === '' || exp === '') { alert(translations[currentLang].alertBasicData); return; }
 
-            // يتم حفظ اسم التصنيف كما هو في الإدخال (باللغة التي تم إدخالها به)
             const newItem = { name, active, category, qty: Number(qty), price: Number(price), exp };
 
             if(id === '') {
@@ -578,6 +595,8 @@
             document.getElementById('itemActive').value = '';
             document.getElementById('itemQty').value = '';
             document.getElementById('itemPrice').value = '';
+            document.getElementById('itemExp').value = '';
+            
             const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
             modal.hide();
         }
@@ -623,7 +642,6 @@
             const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || DEFAULT_EXCHANGE_RATE;
             const totalUSD = totalVal / exchangeRate;
             
-            // عرض القيمة التقديرية في البطاقة الرئيسية
             document.getElementById('totalValue').innerText = 
                 totalVal.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' ' + (currentLang === 'ar' ? 'ج.س' : 'SDG') +
                 ' / ' +
@@ -636,7 +654,6 @@
             const thirtyDaysFromNow = new Date();
             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
             
-            // الأصناف التي ستنتهي خلال 30 يوماً أو انتهت بالفعل
             const criticalAlerts = inventory.filter(item => {
                 const expiryDate = new Date(item.exp);
                 return expiryDate <= thirtyDaysFromNow;
@@ -646,33 +663,29 @@
         }
 
         // --- 5. وظيفة رسم قيمة المخزون بالعملات (USD/SDG) ---
-        let totalSDGValue = 0; // يتم تحديثها في updateReports
+        let totalSDGValue = 0;
         
         function calculateTotalSDG() {
              totalSDGValue = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
              return totalSDGValue;
         }
 
-        // دالة مساعدة لتنسيق الأرقام الكبيرة (مثل 3.5 مليون)
         function formatLargeNumber(value, currency) {
             if (value >= 1000000) {
                 return (value / 1000000).toLocaleString(undefined, { maximumFractionDigits: 2 }) + ' M ' + currency;
             } else if (value >= 1000) {
                 return (value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' K ' + currency;
             }
-            // إذا كانت العملة دولار، اعرض منزلتين عشريتين
             const maxDigits = (currency === 'USD' ? 2 : 0);
             return value.toLocaleString(undefined, { maximumFractionDigits: maxDigits }) + ' ' + currency;
         }
 
 
         function calculateAndDrawValueChart() {
-            // استخدام القيمة المدخلة، أو القيمة الافتراضية 3000
             const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || DEFAULT_EXCHANGE_RATE;
             const totalSDG = calculateTotalSDG();
             const totalUSD = totalSDG / exchangeRate;
             
-            // تحديث عرض القيم في اللوحة
             document.getElementById('totalSDGDisplay').textContent = formatLargeNumber(totalSDG, 'SDG');
             document.getElementById('totalUSDDisplay').textContent = formatLargeNumber(totalUSD, 'USD');
             
@@ -681,16 +694,14 @@
                 (currentLang === 'ar' ? 'قيمة المخزون (دولار)' : 'Stock Value (USD)')
             ];
             
-            // إيقاف وتدمير الرسم البياني السابق
             if (currencyValueChartInstance) currencyValueChartInstance.destroy();
 
+            // لنرسم قيمة الجنيه السوداني وقيمة الدولار التي تمثل القيمة الإجمالية للمخزون
             currencyValueChartInstance = new Chart(document.getElementById('currencyValueChart'), {
-                type: 'doughnut', // الرسم البياني الدائري المطلوب
+                type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
-                        // نستخدم قيمة الدولار المحولة * سعر الصرف لعرض قيمة الجنيه السوداني في شريحة 
-                        // وقيمة الدولار كشريحة أخرى، حيث يمثلان نفس القيمة المالية ولكن بوحدة مختلفة
                         data: [totalSDG, totalUSD], 
                         backgroundColor: ['#3498db', '#2ecc71'], 
                         hoverOffset: 4
@@ -739,13 +750,13 @@
         
         // وظيفة تحديث الرسوم البيانية (الرئيسية والمنبثقة)
         function updateCharts() {
-            if (inventory.length === 0) {
-                 // تدمير الرسوم البيانية في حال كانت قاعدة البيانات فارغة
-                if (categoryChartInstance) categoryChartInstance.destroy();
-                if (expiryChartInstance) expiryChartInstance.destroy();
-                if (modalChartInstance) modalChartInstance.destroy();
-                return;
-            }
+            // تدمير الرسوم البيانية قبل إعادة الإنشاء لتجنب أخطاء Chart.js
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            if (expiryChartInstance) expiryChartInstance.destroy();
+            if (modalChartInstance) modalChartInstance.destroy();
+            
+            if (inventory.length === 0) return;
+
 
             const categoryData = inventory.reduce((acc, item) => {
                 const translatedCategory = getTranslatedCategoryName(item.category);
@@ -756,7 +767,6 @@
             const chartColors = ['#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#e74c3c', '#1abc9c', '#f39c12'];
 
             // Chart 1: قيمة المخزون حسب التصنيف (الرئيسي)
-            if (categoryChartInstance) categoryChartInstance.destroy();
             categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
                 type: 'bar',
                 data: {
@@ -791,7 +801,6 @@
             };
 
             // Chart 2: تنبيهات الانتهاء (الرئيسي)
-            if (expiryChartInstance) expiryChartInstance.destroy();
             expiryChartInstance = new Chart(document.getElementById('expiryChart'), {
                 type: 'doughnut',
                 data: expiryChartData,
@@ -799,7 +808,6 @@
             });
 
             // Modal Chart: (يتم تدميره وإعادة إنشائه في كل مرة ليعمل بشكل صحيح في النافذة المنبثقة)
-            if (modalChartInstance) modalChartInstance.destroy();
             modalChartInstance = new Chart(document.getElementById('modalExpiryChart'), {
                 type: 'doughnut',
                 data: expiryChartData,
@@ -830,14 +838,14 @@
             let bodyContent = '';
 
             if (lowStockItems.length === 0) {
-                 bodyContent = `<tr><td colspan="4" class="text-center text-muted">جميع الأصناف ضمن الحد الأدنى أو أعلاه.</td></tr>`;
+                 bodyContent = `<tr><td colspan="4" class="text-center text-muted">${currentLang === 'ar' ? 'جميع الأصناف ضمن الحد الأدنى أو أعلاه.' : 'All items are at or above the minimum stock level.'}</td></tr>`;
             } else {
                 lowStockItems.forEach(item => {
                     bodyContent += `
                         <tr class="table-warning">
                             <td>${item.name}</td>
                             <td>${getTranslatedCategoryName(item.category)}</td>
-                            <td>${item.qty < 5 ? translations[currentLang].lowStockHeader : 'آمن'}</td>
+                            <td>${item.qty < 5 ? translations[currentLang].lowStockHeader : (currentLang === 'ar' ? 'آمن' : 'Safe')}</td>
                             <td>${item.qty}</td>
                         </tr>
                     `;
@@ -855,19 +863,16 @@
         // --- 8. وظيفة عرض العد التنازلي لآخر 30 يوم (Countdown Modal) ---
         function showThirtyDayCountdown() {
             const today = new Date();
-            // لضمان دقة العد التنازلي، يتم ضبط اليوم إلى منتصف الليل
             today.setHours(0, 0, 0, 0); 
             
             const thirtyDaysFromNow = new Date(today);
             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
             
-            // 1. تصفية الأصناف: التي تنتهي خلال 30 يوماً أو انتهت بالفعل
             const countdownItems = inventory.filter(item => {
                 const expiryDate = new Date(item.exp);
-                // تجاوز وقت الساعة والدقائق لتجنب مشاكل التوقيت
                 expiryDate.setHours(0, 0, 0, 0); 
                 return expiryDate <= thirtyDaysFromNow; 
-            }).sort((a, b) => new Date(a.exp) - new Date(b.exp)); // ترتيب حسب الأقرب انتهاءً
+            }).sort((a, b) => new Date(a.exp) - new Date(b.exp));
 
             const listContainer = document.getElementById('countdownListBody');
             listContainer.innerHTML = '';
@@ -879,26 +884,22 @@
                     const expiryDate = new Date(item.exp);
                     expiryDate.setHours(0, 0, 0, 0); 
 
-                    // حساب الأيام المتبقية (أو التي تجاوزت)
                     const diffTime = expiryDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
-                    let progressValue; // القيمة التي تمثل شريط التقدم (100% هو بداية التنبيه)
+                    let progressValue; 
                     let progressBarClass;
                     let statusText;
                     
                     if (diffDays <= 0) {
-                        // منتهية بالفعل
-                        progressValue = 100; // شريط ممتلئ
+                        progressValue = 100;
                         progressBarClass = 'bg-danger';
                         statusText = `<strong class="text-danger"><i class="fas fa-times-circle"></i> ${translations[currentLang].chartLabelExpired}</strong>`;
                     } else if (diffDays <= 30) {
-                        // العد التنازلي لآخر 30 يوم
                         progressValue = ((30 - diffDays) / 30) * 100;
                         progressBarClass = diffDays < 7 ? 'bg-danger' : 'bg-warning';
                         statusText = `<strong class="text-warning"><i class="fas fa-exclamation-triangle"></i> ${diffDays} ${translations[currentLang].daysLeft}</strong>`;
                     } else {
-                        // هذا الجزء لا يفترض أن يحدث بسبب التصفية، لكن للأمان
                         progressValue = 0;
                         progressBarClass = 'bg-success';
                         statusText = `<strong class="text-success"><i class="fas fa-check-circle"></i> آمن (متبقي ${diffDays} يوم)</strong>`;
@@ -1066,7 +1067,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             applyTheme(currentTheme);
             applyLanguage(currentLang);
-            // لضمان وجود قيمة افتراضية في تقرير العملة عند الفتح لأول مرة
             calculateTotalSDG();
         });
     </script>
