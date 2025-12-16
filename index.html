@@ -90,18 +90,21 @@
                     <h3 id="totalItems">0</h3>
                 </div>
             </div>
+            
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 text-primary">
+                <div class="card card-custom p-3 text-primary card-link" data-bs-toggle="modal" data-bs-target="#valueChartModal" onclick="calculateAndDrawValueChart()">
                     <h5><i class="fas fa-money-bill-wave"></i> <span data-translate="totalValue">قيمة المخزون</span></h5>
                     <h3 id="totalValue">0 ج.س</h3>
                 </div>
             </div>
+            
             <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 text-danger card-link" onclick="showThirtyDayCountdown()">
                     <h5><i class="fas fa-exclamation-triangle"></i> <span data-translate="expiredAlerts">تنبيهات الانتهاء (30 يوم)</span></h5>
                     <h3 id="expiredAlerts">0</h3>
                 </div>
             </div>
+            
             <div class="col-lg-3 col-md-6">
                 <div class="card card-custom p-3 text-warning card-link" onclick="showLowStockItems()">
                     <h5><i class="fas fa-minus-circle"></i> <span data-translate="lowStock">تنبيهات النواقص</span></h5>
@@ -291,6 +294,28 @@
             </div>
         </div>
     </div>
+    
+    <div class="modal fade" id="valueChartModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-chart-bar"></i> <span data-translate="valueChartTitle">قيمة المخزون بالعملات</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="exchangeRateInput" class="form-label" data-translate="exchangeRateLabel">سعر الصرف (SDG لكل 1 USD)</label>
+                        <input type="number" id="exchangeRateInput" class="form-control" value="1000" min="1" onchange="calculateAndDrawValueChart()" onkeyup="calculateAndDrawValueChart()">
+                        <small class="form-text text-muted" data-translate="exchangeRateNote">يستخدم لحساب قيمة المخزون بالدولار.</small>
+                    </div>
+                    <canvas id="currencyValueChart"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -317,6 +342,7 @@
                 countdownTitle: 'تنبيه: العد التنازلي للانتهاء (30 يوماً)', countdownText: 'يوم/أيام متبقية', inventoryStatusTitle: 'حالة المخزون حسب الانتهاء',
                 countdownNoItems: 'لا توجد أدوية تنتهي خلال الثلاثين يوماً القادمة.',
                 daysLeft: 'يوم متبقي',
+                valueChartTitle: 'قيمة المخزون بالعملات', exchangeRateLabel: 'سعر الصرف (SDG لكل 1 USD)', exchangeRateNote: 'يستخدم لحساب قيمة المخزون بالدولار.',
             },
             en: {
                 appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
@@ -338,6 +364,7 @@
                 countdownTitle: 'Alert: Expiry Countdown (30 Days)', countdownText: 'days left', inventoryStatusTitle: 'Inventory Status by Expiry',
                 countdownNoItems: 'No items expiring in the next 30 days.',
                 daysLeft: 'days left',
+                valueChartTitle: 'Stock Value by Currency', exchangeRateLabel: 'Exchange Rate (SDG per 1 USD)', exchangeRateNote: 'Used to calculate stock value in USD.',
             }
         };
 
@@ -346,9 +373,11 @@
         let currentLang = localStorage.getItem('wadAlmansiLang') || 'ar';
         let currentTheme = localStorage.getItem('wadAlmansiTheme') || 'light';
         let inventory = JSON.parse(localStorage.getItem('wadAlmansiData')) || [];
+        
         let categoryChartInstance = null;
         let expiryChartInstance = null;
         let modalChartInstance = null; 
+        let currencyValueChartInstance = null; // New chart instance for currency conversion
 
         // --- وظائف اللغة والوضع الليلي ---
         function applyLanguage(lang) {
@@ -566,6 +595,78 @@
             document.getElementById('expiredAlerts').innerText = criticalAlerts;
         }
 
+        // --- 5. وظيفة رسم قيمة المخزون بالعملات (USD/SDG) ---
+        let totalSDGValue = 0; // يتم تحديثها في updateReports
+        
+        function calculateTotalSDG() {
+             totalSDGValue = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
+             return totalSDGValue;
+        }
+
+        function calculateAndDrawValueChart() {
+            const exchangeRate = Number(document.getElementById('exchangeRateInput').value) || 1;
+            const totalSDG = calculateTotalSDG();
+            const totalUSD = totalSDG / exchangeRate;
+            
+            const labels = ['SDG', 'USD'];
+            const data = [totalSDG, totalUSD];
+            
+            // إيقاف وتدمير الرسم البياني السابق
+            if (currencyValueChartInstance) currencyValueChartInstance.destroy();
+
+            currencyValueChartInstance = new Chart(document.getElementById('currencyValueChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: translations[currentLang].totalValue,
+                        data: data,
+                        backgroundColor: ['#3498db', '#2ecc71'], 
+                        borderColor: ['#3498db', '#2ecc71'], 
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: currentLang === 'ar' ? 'القيمة الإجمالية' : 'Total Value'
+                            },
+                            // استخدام صيغة عرض مختلفة للمحور لتناسب الأرقام الكبيرة
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (index === 0) return value.toLocaleString() + ' SDG';
+                                    if (index === 1) return value.toLocaleString() + ' USD';
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataIndex === 0) {
+                                        label += context.parsed.y.toLocaleString() + ' SDG';
+                                    } else {
+                                        label += context.parsed.y.toLocaleString() + ' USD';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
         // وظيفة تحديث الرسوم البيانية (الرئيسية والمنبثقة)
         function updateCharts() {
             if (inventory.length === 0) return;
@@ -629,7 +730,7 @@
             });
         }
         
-        // --- 8. وظيفة عرض التفاصيل (Details Modal) ---
+        // --- 6. وظيفة عرض التفاصيل (Details Modal) ---
         function showDetails(index) {
             const item = inventory[index];
             document.getElementById('detailName').textContent = item.name;
@@ -643,7 +744,7 @@
             modal.show();
         }
         
-        // --- 9. وظيفة عرض قائمة النواقص (Alerts Modal) ---
+        // --- 7. وظيفة عرض قائمة النواقص (Alerts Modal) ---
         function showLowStockItems() {
             const lowStockItems = inventory.filter(item => item.qty < 5);
             
@@ -674,7 +775,7 @@
             modal.show();
         }
         
-        // --- 10. وظيفة عرض العد التنازلي لآخر 30 يوم (Countdown Modal) ---
+        // --- 8. وظيفة عرض العد التنازلي لآخر 30 يوم (Countdown Modal) ---
         function showThirtyDayCountdown() {
             const today = new Date();
             // لضمان دقة العد التنازلي، يتم ضبط اليوم إلى منتصف الليل
@@ -752,21 +853,7 @@
             modal.show();
         }
         
-        // --- 11. وظيفة عرض التفاصيل (Modal) ---
-        function showDetails(index) {
-            const item = inventory[index];
-            document.getElementById('detailName').textContent = item.name;
-            document.getElementById('detailActive').textContent = item.active;
-            document.getElementById('detailCategory').textContent = item.category;
-            document.getElementById('detailQty').textContent = item.qty;
-            document.getElementById('detailPrice').textContent = item.price;
-            document.getElementById('detailExp').textContent = item.exp;
-
-            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
-            modal.show();
-        }
-
-        // --- 5. النسخ الاحتياطي والاستعادة (Backup/Restore) ---
+        // --- 9. النسخ الاحتياطي والاستعادة (Backup/Restore) ---
         function backupData() {
             const dataStr = JSON.stringify(inventory, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
@@ -856,7 +943,7 @@
             return data;
         }
 
-        // --- 6. التصدير إلى Excel (CSV) ---
+        // --- 10. التصدير إلى Excel (CSV) ---
         function exportToExcel() {
             let csv = [];
             
@@ -902,6 +989,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             applyTheme(currentTheme);
             applyLanguage(currentLang);
+            // لضمان وجود قيمة افتراضية في تقرير العملة عند الفتح لأول مرة
+            calculateTotalSDG();
         });
     </script>
 </body>
