@@ -33,6 +33,9 @@
         .danger-bg { background-color: #e74c3c20; }
         .warning-bg { background-color: #f39c1220; }
         canvas { max-height: 300px; }
+        /* النمط الجديد لاسم المنتج القابل للنقر */
+        .drug-name-link { cursor: pointer; text-decoration: underline; color: var(--text-color); }
+        .drug-name-link:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -71,25 +74,25 @@
 
         <div class="row px-3">
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 bg-white text-success">
+                <div class="card card-custom p-3 text-success">
                     <h5><i class="fas fa-boxes"></i> <span data-translate="totalItems">إجمالي الأصناف</span></h5>
                     <h3 id="totalItems">0</h3>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 bg-white text-primary">
+                <div class="card card-custom p-3 text-primary">
                     <h5><i class="fas fa-money-bill-wave"></i> <span data-translate="totalValue">قيمة المخزون</span></h5>
                     <h3 id="totalValue">0 ج.س</h3>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 bg-white text-danger">
+                <div class="card card-custom p-3 text-danger">
                     <h5><i class="fas fa-exclamation-triangle"></i> <span data-translate="expiredAlerts">تنبيهات الانتهاء</span></h5>
                     <h3 id="expiredAlerts">0</h3>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 bg-white text-warning">
+                <div class="card card-custom p-3 text-warning">
                     <h5><i class="fas fa-minus-circle"></i> <span data-translate="lowStock">تنبيهات النواقص</span></h5>
                     <h3 id="lowStock">0</h3>
                 </div>
@@ -113,7 +116,7 @@
                 <button onclick="exportToExcel()" class="btn btn-info btn-custom"><i class="fas fa-file-excel"></i> <span data-translate="exportExcel">تصدير إلى Excel</span></button>
                 <button onclick="backupData()" class="btn btn-secondary btn-custom"><i class="fas fa-download"></i> <span data-translate="backupData">حفظ نسخة احتياطية</span></button>
                 <button onclick="document.getElementById('restoreInput').click()" class="btn btn-warning btn-custom"><i class="fas fa-upload"></i> <span data-translate="restoreData">استعادة البيانات</span></button>
-                <input type="file" id="restoreInput" style="display:none;" onchange="restoreData(event)" accept="application/json">
+                <input type="file" id="restoreInput" style="display:none;" onchange="restoreData(event)" accept=".json,.csv,.txt">
             </div>
         </div>
         
@@ -186,6 +189,31 @@
             </div>
         </div>
     </div>
+    
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-info-circle"></i> <span data-translate="drugDetailsTitle">تفاصيل الدواء</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered">
+                        <tr><th data-translate="labelDrugName">اسم الدواء</th><td id="detailName"></td></tr>
+                        <tr><th data-translate="labelActiveIngredient">المادة الفعالة</th><td id="detailActive"></td></tr>
+                        <tr><th data-translate="labelCategory">التصنيف</th><td id="detailCategory"></td></tr>
+                        <tr><th data-translate="labelQty">الكمية المتبقية</th><td id="detailQty"></td></tr>
+                        <tr><th data-translate="labelPrice">سعر الوحدة</th><td id="detailPrice"></td></tr>
+                        <tr><th data-translate="labelExpiryDate">تاريخ الانتهاء</th><td id="detailExp"></td></tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -194,7 +222,7 @@
             ar: {
                 appTitle: 'صيدلية ود المنسي - نظام الإدارة', pharmacyName: 'صيدلية ود المنسي', pharmacyNameHeader: 'صيدلية ود المنسي', systemDesc: 'نظام إدارة المخزون والمبيعات',
                 placeholderPassword: 'أدخل كلمة المرور', login: 'دخول', loginError: 'كلمة المرور غير صحيحة!', logout: 'تسجيل خروج',
-                langSwitch: 'English', themeSwitch: 'الوضع الليلي',
+                langSwitch: 'English', themeSwitch: 'الوضع الليلي', drugDetailsTitle: 'تفاصيل الدواء',
                 totalItems: 'إجمالي الأصناف', totalValue: 'قيمة المخزون', expiredAlerts: 'تنبيهات الانتهاء', lowStock: 'تنبيهات النواقص',
                 dashboardHeader: 'لوحة المعلومات والتقارير', graphStockTitle: 'قيمة المخزون حسب التصنيف', graphExpTitle: 'الأدوية القريبة من الانتهاء (أصناف)',
                 exportExcel: 'تصدير إلى Excel', backupData: 'حفظ نسخة احتياطية', restoreData: 'استعادة البيانات',
@@ -205,13 +233,13 @@
                 categoryPainkillers: 'مسكنات', categoryAntibiotics: 'مضادات حيوية', categoryVitamins: 'فيتامينات ومكملات', categorySyrups: 'أدوية شراب', categoryOthers: 'أخرى',
                 close: 'إغلاق', save: 'حفظ البيانات', confirmDelete: 'هل أنت متأكد من حذف هذا الصنف؟', alertBasicData: 'الرجاء تعبئة البيانات الأساسية',
                 chartLabelItems: 'عدد الأصناف', chartLabelExpired: 'منتهية', chartLabelSoon: 'قريباً', chartLabelSafe: 'آمنة',
-                confirmRestore: 'هل أنت متأكد من استعادة البيانات؟ سيتم مسح البيانات الحالية.', restoreSuccess: 'تم استعادة البيانات بنجاح!', restoreError: 'خطأ في ملف الاستعادة.',
+                confirmRestore: 'هل أنت متأكد من استعادة البيانات؟ سيتم مسح البيانات الحالية.', restoreSuccess: 'تم استعادة البيانات بنجاح!', restoreError: 'خطأ في ملف الاستعادة.', restoreCSVWarning: 'تحذير: البيانات المستوردة من CSV/Excel يجب أن تكون بنفس ترتيب رؤوس الأعمدة (اسم الدواء, المادة الفعالة, التصنيف, الكمية, السعر, تاريخ الانتهاء).',
                 exportFileName: 'تقرير-صيدلية-ود-المنسي',
             },
             en: {
                 appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
                 placeholderPassword: 'Enter Password', login: 'Login', loginError: 'Incorrect Password!', logout: 'Logout',
-                langSwitch: 'العربية', themeSwitch: 'Day Mode',
+                langSwitch: 'العربية', themeSwitch: 'Day Mode', drugDetailsTitle: 'Drug Details',
                 totalItems: 'Total Items', totalValue: 'Stock Value', expiredAlerts: 'Expiry Alerts', lowStock: 'Low Stock Alerts',
                 dashboardHeader: 'Dashboard and Reports', graphStockTitle: 'Stock Value by Category', graphExpTitle: 'Near Expiry Drugs (Items)',
                 exportExcel: 'Export to Excel', backupData: 'Backup Data', restoreData: 'Restore Data',
@@ -222,7 +250,7 @@
                 categoryPainkillers: 'Painkillers', categoryAntibiotics: 'Antibiotics', categoryVitamins: 'Vitamins & Supplements', categorySyrups: 'Syrups', categoryOthers: 'Others',
                 close: 'Close', save: 'Save Data', confirmDelete: 'Are you sure you want to delete this item?', alertBasicData: 'Please fill basic data',
                 chartLabelItems: 'Item Count', chartLabelExpired: 'Expired', chartLabelSoon: 'Soon', chartLabelSafe: 'Safe',
-                confirmRestore: 'Are you sure you want to restore data? Current data will be erased.', restoreSuccess: 'Data restored successfully!', restoreError: 'Error in restoration file.',
+                confirmRestore: 'Are you sure you want to restore data? Current data will be erased.', restoreSuccess: 'Data restored successfully!', restoreError: 'Error in restoration file.', restoreCSVWarning: 'Warning: Data imported from CSV/Excel must follow the header order (Drug Name, Active Ingredient, Category, Quantity, Price, Expiry Date).',
                 exportFileName: 'Wad-Almansi-Pharmacy-Report',
             }
         };
@@ -246,7 +274,7 @@
             document.getElementById('langToggleBtn').querySelector('span').textContent = lang === 'ar' ? translations.ar.langSwitch : translations.en.langSwitch;
             localStorage.setItem('wadAlmansiLang', lang);
             updateCategoryOptions(lang);
-            loadItems(); // إعادة تحميل الجدول بالعربية أو الإنجليزية
+            loadItems(); 
         }
 
         function toggleLanguage() {
@@ -267,7 +295,7 @@
                 text.textContent = currentLang === 'ar' ? 'الوضع الليلي' : 'Night Mode';
             }
             localStorage.setItem('wadAlmansiTheme', theme);
-            updateCharts(); // تحديث الألوان في الرسم البياني
+            updateCharts(); 
         }
 
         function toggleTheme() {
@@ -300,19 +328,13 @@
             const select = document.getElementById('categoryFilter');
             select.innerHTML = `<option value="">${translations[lang].filterAll}</option>`;
             
-            // إضافة التصنيفات الافتراضية للـ Modal
             const modalSelect = document.getElementById('itemCategory');
-            modalSelect.innerHTML = '';
-            ['Painkillers', 'Antibiotics', 'Vitamins', 'Syrups', 'Others'].forEach(catKey => {
-                const key = 'category' + catKey;
-                modalSelect.innerHTML += `<option data-translate="${key}">${translations[lang][key]}</option>`;
-            });
-
-            // إضافة التصنيفات المستخدمة حالياً في المخزون لفلتر البحث
+            // لا نغير قائمة التصنيفات الافتراضية هنا لتجنب تكرار الترجمة
+            
             getUniqueCategories().forEach(cat => {
                  select.innerHTML += `<option value="${cat}">${cat}</option>`;
             });
-            // إعادة تعيين الفلتر بعد التحديث
+            
             const filterValue = localStorage.getItem('categoryFilterValue') || '';
             select.value = filterValue;
         }
@@ -321,7 +343,7 @@
             localStorage.setItem('wadAlmansiData', JSON.stringify(inventory));
             loadItems();
             updateReports();
-            updateCharts(); // تحديث الرسوم البيانية عند الحفظ
+            updateCharts(); 
         }
 
         function loadItems() {
@@ -337,26 +359,26 @@
             filteredInventory.forEach((item, index) => {
                 const today = new Date();
                 const expiryDate = new Date(item.exp);
-                const oneMonthFromNow = new Date();
-                oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+                const threeMonthsFromNow = new Date(); // 3 أشهر للتنبيه
+                threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
 
                 let expiryClass = '';
                 let rowClass = '';
 
                 if (expiryDate < today) {
                     expiryClass = 'expired';
-                    rowClass = 'danger-bg'; // تنبيه لتاريخ الانتهاء
-                } else if (expiryDate < oneMonthFromNow) {
+                    rowClass = 'danger-bg'; 
+                } else if (expiryDate < threeMonthsFromNow) {
                     expiryClass = 'soon-expired';
                     rowClass = 'warning-bg';
                 }
 
-                // تنبيه للكمية المتبقية
                 const qtyClass = item.qty < 5 ? 'text-danger fw-bold' : '';
 
+                // التعديل: اسم المنتج قابل للنقر لعرض التفاصيل
                 let row = `
                     <tr class="${rowClass}">
-                        <td><strong>${item.name}</strong></td>
+                        <td><strong class="drug-name-link" onclick="showDetails(${index})">${item.name}</strong></td>
                         <td>${item.active}</td>
                         <td>${item.category}</td>
                         <td class="${qtyClass}">${item.qty}</td>
@@ -374,12 +396,27 @@
             updateCategoryOptions(currentLang);
         }
 
+        // --- 7. وظيفة عرض التفاصيل (ميزة جديدة) ---
+        function showDetails(index) {
+            const item = inventory[index];
+            document.getElementById('detailName').textContent = item.name;
+            document.getElementById('detailActive').textContent = item.active;
+            document.getElementById('detailCategory').textContent = item.category;
+            document.getElementById('detailQty').textContent = item.qty;
+            document.getElementById('detailPrice').textContent = item.price;
+            document.getElementById('detailExp').textContent = item.exp;
+
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+        }
+
+
         // --- 3. عمليات الإضافة والتعديل والحذف (إصلاح الأخطاء) ---
         function saveItem() {
             const id = document.getElementById('itemId').value;
             const name = document.getElementById('itemName').value;
-            const active = document.getElementById('itemActive').value; // حقل جديد
-            const category = document.getElementById('itemCategory').value; // حقل جديد
+            const active = document.getElementById('itemActive').value; 
+            const category = document.getElementById('itemCategory').value; 
             const qty = document.getElementById('itemQty').value;
             const price = document.getElementById('itemPrice').value;
             const exp = document.getElementById('itemExp').value;
@@ -396,7 +433,6 @@
 
             saveData();
             
-            // إغلاق النافذة وتفريغ الحقول
             document.getElementById('itemId').value = '';
             document.getElementById('itemName').value = '';
             document.getElementById('itemActive').value = '';
@@ -437,7 +473,7 @@
             });
         }
 
-        // --- 4. التقارير والرسوم البيانية (ميزات جديدة) ---
+        // --- 4. التقارير والرسوم البيانية ---
         function updateReports() {
             document.getElementById('totalItems').innerText = inventory.length;
             
@@ -448,8 +484,8 @@
             document.getElementById('lowStock').innerText = lowStockCount;
 
             const today = new Date();
-            const oneMonthFromNow = new Date();
-            oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+            const threeMonthsFromNow = new Date();
+            threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
 
             const expiredCount = inventory.filter(item => new Date(item.exp) < today).length;
             document.getElementById('expiredAlerts').innerText = expiredCount;
@@ -458,7 +494,6 @@
         function updateCharts() {
             if (inventory.length === 0) return;
 
-            // Chart 1: قيمة المخزون حسب التصنيف
             const categoryData = inventory.reduce((acc, item) => {
                 acc[item.category] = (acc[item.category] || 0) + (item.price * item.qty);
                 return acc;
@@ -483,20 +518,15 @@
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: { display: false },
-                        title: { display: false }
-                    },
                     scales: {
                         y: { beginAtZero: true, title: { display: true, text: translations[currentLang].totalValue } }
                     }
                 }
             });
 
-            // Chart 2: تنبيهات الانتهاء
             const today = new Date();
             const soonExpiry = new Date();
-            soonExpiry.setMonth(soonExpiry.getMonth() + 3); // 3 أشهر للتنبيه القريب
+            soonExpiry.setMonth(soonExpiry.getMonth() + 3); 
 
             const expired = inventory.filter(item => new Date(item.exp) < today).length;
             const soon = inventory.filter(item => new Date(item.exp) >= today && new Date(item.exp) <= soonExpiry).length;
@@ -538,33 +568,92 @@
         }
 
         function restoreData(event) {
-            if (!confirm(translations[currentLang].confirmRestore)) return;
-
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const restoredData = JSON.parse(e.target.result);
-                    // التحقق من أن البيانات تبدو كبيانات مخزون
-                    if (Array.isArray(restoredData) && restoredData.every(item => item.name && item.qty !== undefined)) {
-                        inventory = restoredData;
-                        saveData();
-                        alert(translations[currentLang].restoreSuccess);
-                    } else {
-                        throw new Error("Invalid format");
+            const fileName = file.name.toLowerCase();
+
+            if (fileName.endsWith('.json')) {
+                // استعادة من ملف JSON
+                if (!confirm(translations[currentLang].confirmRestore)) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const restoredData = JSON.parse(e.target.result);
+                        if (Array.isArray(restoredData) && restoredData.every(item => item.name && item.qty !== undefined)) {
+                            inventory = restoredData;
+                            saveData();
+                            alert(translations[currentLang].restoreSuccess);
+                        } else {
+                            throw new Error("Invalid format");
+                        }
+                    } catch (error) {
+                        alert(translations[currentLang].restoreError + ' (JSON: ' + error.message + ')');
                     }
-                } catch (error) {
-                    alert(translations[currentLang].restoreError + ' (' + error.message + ')');
+                };
+                reader.readAsText(file);
+            } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+                // استعادة من ملف CSV/Excel (تمت إضافتها)
+                if (!confirm(translations[currentLang].confirmRestore + '\n' + translations[currentLang].restoreCSVWarning)) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const csvText = e.target.result;
+                        const newInventory = parseCSV(csvText); // دالة جديدة لتحويل CSV
+                        if (newInventory && Array.isArray(newInventory) && newInventory.length > 0) {
+                            inventory = newInventory;
+                            saveData();
+                            alert(translations[currentLang].restoreSuccess);
+                        } else {
+                            throw new Error("CSV parse failed or empty.");
+                        }
+                    } catch (error) {
+                        alert(translations[currentLang].restoreError + ' (CSV: ' + error.message + ')');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                alert(translations[currentLang].restoreError + ' (Unsupported file type)');
+            }
+        }
+        
+        // وظيفة مساعدة لتحويل CSV إلى تنسيق البيانات (ميزة جديدة)
+        function parseCSV(csv) {
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            if (lines.length <= 1) return []; // لا يوجد رؤوس أعمدة أو بيانات
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const data = [];
+            
+            // ترتيب الأعمدة المتوقع (باللغة الإنجليزية الداخلية لسهولة المعالجة)
+            const expectedKeys = ['name', 'active', 'category', 'qty', 'price', 'exp'];
+
+            for (let i = 1; i < lines.length; i++) {
+                // تقسيم الصفوف مع دعم النصوص داخل علامات التنصيص
+                const values = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.trim().replace(/"/g, ''));
+
+                if (values.length >= 6) { 
+                    const item = {};
+                    // تعيين القيم بترتيب ثابت بغض النظر عن لغة رأس العمود في الملف
+                    item.name = values[0];
+                    item.active = values[1] || ''; // المادة الفعالة
+                    item.category = values[2] || 'أخرى'; // التصنيف
+                    item.qty = Number(values[3]) || 0; // الكمية
+                    item.price = Number(values[4]) || 0; // السعر
+                    item.exp = values[5]; // تاريخ الانتهاء
+                    
+                    if (item.name && item.exp) {
+                        data.push(item);
+                    }
                 }
-            };
-            reader.readAsText(file);
+            }
+            return data;
         }
 
-        // --- 6. التصدير إلى Excel (CSV) ---
+        // --- 6. التصدير إلى Excel (CSV) (إصلاح وتطوير) ---
         function exportToExcel() {
             let csv = [];
+            // رؤوس الأعمدة يجب أن تكون بنفس ترتيب الاستيراد
             const headers = [
                 translations[currentLang].tableDrugName, 
                 translations[currentLang].tableActiveIngredient, 
@@ -572,12 +661,13 @@
                 translations[currentLang].tableQty, 
                 translations[currentLang].tablePrice, 
                 translations[currentLang].tableExpiryDate
-            ];
-            csv.push(headers.join(','));
+            ].map(h => h.replace(/(\(|\))/g, '')).join(','); // إزالة الأقواس لتسهيل الاستيراد
+            csv.push(headers);
 
             inventory.forEach(item => {
+                // تهيئة النصوص بعلامات التنصيص للتعامل مع الفواصل داخل النص (CSV standard)
                 const row = [
-                    `"${item.name.replace(/"/g, '""')}"`, // تهيئة للقراءة في Excel
+                    `"${item.name.replace(/"/g, '""')}"`, 
                     `"${item.active.replace(/"/g, '""')}"`,
                     `"${item.category.replace(/"/g, '""')}"`,
                     item.qty,
@@ -587,13 +677,15 @@
                 csv.push(row);
             });
 
-            const csvFile = new Blob(["\ufeff" + csv.join('\n')], { type: "text/csv;charset=utf-8;" }); // إضافة \ufeff لدعم UTF-8 في Excel
+            // إضافة \ufeff لدعم UTF-8 (العربية) في Excel
+            const csvFile = new Blob(["\ufeff" + csv.join('\n')], { type: "text/csv;charset=utf-8;" }); 
             const link = document.createElement("a");
             link.href = URL.createObjectURL(csvFile);
             link.download = translations[currentLang].exportFileName + '.csv';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(link.href); // تحرير الذاكرة
         }
         
         // --- تهيئة النظام عند التحميل ---
