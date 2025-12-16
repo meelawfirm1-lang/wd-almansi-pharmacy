@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate="appTitle">نظام صيدلية ود المنسي الذكي v2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>صيدلية ود المنسي - موبايل</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,404 +13,308 @@
 
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #0f9b0f, #005c00);
-            --dark-gradient: linear-gradient(135deg, #2c3e50, #000000);
-            --bg-light: #f4f7f6;
-            --bg-dark: #1e1e2d;
-            --card-light: #ffffff;
-            --card-dark: #2a2a40;
-            --text-light: #333;
-            --text-dark: #e0e0e0;
-            --hover-transform: translateY(-3px) scale(1.02);
+            --primary-color: #198754;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
         }
 
-        body { 
-            background-color: var(--bg-light); 
-            color: var(--text-light); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            transition: all 0.3s ease; 
+        [data-bs-theme="dark"] {
+            --primary-color: #2ecc71;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
         }
 
-        [data-bs-theme="dark"] body { 
-            background-color: var(--bg-dark); 
-            color: var(--text-dark); 
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 80px; /* مساحة للتمرير في الموبايل */
         }
 
-        /* --- 1. Header & Interactive Buttons --- */
-        .header-custom {
-            background: var(--primary-gradient);
+        /* --- Header Styles --- */
+        .mobile-header {
+            background: linear-gradient(135deg, #198754, #0f5132);
             color: white;
-            padding: 15px 20px;
-            border-radius: 0 0 25px 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
+            padding: 15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        [data-bs-theme="dark"] .header-custom {
-            background: var(--dark-gradient);
-        }
-
-        .btn-interactive {
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        .header-controls .btn {
             border-radius: 50px;
-            padding: 6px 15px;
-            font-size: 0.9rem;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            transition: transform 0.2s;
+            margin-left: 5px;
+        }
+        .header-controls .btn:active { transform: scale(0.95); }
+
+        /* زر الإضافة الكبير في الأعلى */
+        .btn-add-main {
+            background-color: #ffc107 !important;
+            color: #000 !important;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(255, 193, 7, 0.4);
+        }
+
+        /* --- Grid Cards (Mobile Optimized) --- */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 15px;
+            height: 100%;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            cursor: pointer;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.3);
-            backdrop-filter: blur(5px);
-        }
-
-        .btn-interactive:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            background-color: rgba(255,255,255,0.2);
-            border-color: white;
         }
         
-        .btn-logout-icon {
-            width: 35px;
-            height: 35px;
-            padding: 0;
+        .stat-card:active { transform: scale(0.98); background-color: rgba(0,0,0,0.02); }
+        
+        /* شريط ملون جانبي للبطاقة */
+        .border-left-success { border-left: 5px solid #198754; }
+        .border-left-primary { border-left: 5px solid #0d6efd; }
+        .border-left-danger { border-left: 5px solid #dc3545; }
+        .border-left-warning { border-left: 5px solid #ffc107; }
+
+        .stat-icon {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            opacity: 0.1;
+            font-size: 2.5rem;
+        }
+
+        .stat-value { font-size: 1.4rem; font-weight: bold; margin: 5px 0; }
+        .stat-label { font-size: 0.8rem; color: #6c757d; }
+
+        /* --- Inventory List --- */
+        .inventory-item {
+            background: var(--card-bg);
+            margin-bottom: 10px;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background-color: rgba(255,0,0,0.2);
-        }
-        .btn-logout-icon:hover { background-color: rgba(255,0,0,0.5); }
-
-        /* --- Cards & Grid --- */
-        .card-custom {
-            border: none;
-            border-radius: 15px;
-            background-color: var(--card-light);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            height: 100%;
         }
         
-        [data-bs-theme="dark"] .card-custom {
-            background-color: var(--card-dark);
-            color: var(--text-dark);
+        .item-details h6 { margin: 0; font-weight: bold; font-size: 0.95rem; }
+        .item-details small { font-size: 0.75rem; color: #888; }
+        
+        .badge-qty {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 8px;
+            background-color: #e9ecef;
+            color: #333;
         }
 
-        .card-hover:hover {
-            transform: var(--hover-transform);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            cursor: pointer;
+        /* --- AI Camera Button --- */
+        .camera-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .camera-input {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
         }
 
-        /* --- Tables & Lists --- */
-        .table-custom th { background-color: #e9ecef; }
-        [data-bs-theme="dark"] .table-custom th { background-color: #333; color: #fff; border-color: #444; }
-        [data-bs-theme="dark"] .table-custom td { border-color: #444; color: #eee; }
-
-        .expired { color: #dc3545 !important; font-weight: bold; }
-        .soon-expired { color: #ffc107 !important; font-weight: bold; }
-
-        /* --- Loading Overlay for AI --- */
-        #loadingOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 9999;
-            display: none; flex-direction: column; justify-content: center; align-items: center; color: white;
-        }
-
-        .footer-version {
-            text-align: center; margin-top: 40px; padding: 20px;
-            color: #888; font-size: 0.8rem; border-top: 1px solid rgba(0,0,0,0.1);
+        /* --- Responsive Tweaks --- */
+        @media (max-width: 576px) {
+            .stat-value { font-size: 1.2rem; }
+            .mobile-header { padding: 10px; }
+            h4 { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
 
-    <div id="loadingOverlay">
-        <div class="spinner-border text-light mb-3" role="status"></div>
-        <h5 id="loadingText">جاري المعالجة بالذكاء الاصطناعي...</h5>
-    </div>
-
-    <div id="loginSection" class="container">
-        <div class="row justify-content-center" style="margin-top: 10vh;">
-            <div class="col-md-5">
-                <div class="card card-custom p-5 text-center shadow-lg">
-                    <div class="mb-4">
-                        <i class="fas fa-robot fa-3x text-success mb-3"></i>
-                        <h3 class="fw-bold">صيدلية ود المنسي الذكية</h3>
-                        <small class="text-muted">الإصدار 2.0</small>
-                    </div>
-                    <input type="password" id="passwordInput" class="form-control form-control-lg mb-3 text-center" placeholder="أدخل كلمة المرور" onkeypress="handleLoginEnter(event)">
-                    <button onclick="checkLogin()" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm">دخول النظام</button>
-                    <p id="loginError" class="text-danger mt-3 fw-bold" style="display:none;">خطأ في كلمة المرور</p>
-                </div>
-            </div>
+    <div id="loginSection" class="container d-flex flex-column justify-content-center align-items-center vh-100">
+        <div class="card p-4 shadow-lg border-0 rounded-4 text-center" style="width: 100%; max-width: 350px;">
+            <div class="mb-3 text-success"><i class="fas fa-fingerprint fa-3x"></i></div>
+            <h4 class="mb-4">ود المنسي</h4>
+            <input type="password" id="passwordInput" class="form-control mb-3 text-center rounded-pill" placeholder="كلمة المرور">
+            <button onclick="checkLogin()" class="btn btn-success w-100 rounded-pill">دخول</button>
+            <p id="loginError" class="text-danger mt-2 small" style="display:none;">خطأ في كلمة المرور</p>
         </div>
     </div>
 
-    <div id="mainDashboard" class="container-fluid dashboard" style="display:none;">
+    <div id="mainDashboard" style="display:none;">
         
-        <div class="header-custom d-flex flex-wrap justify-content-between align-items-center">
-            <div class="d-flex align-items-center mb-2 mb-md-0">
-                <i class="fas fa-clinic-medical fa-2x me-2"></i>
-                <div>
-                    <h4 class="m-0 fw-bold">ود المنسي</h4>
-                    <small style="opacity: 0.8;">نظام إدارة المخزون الذكي</small>
-                </div>
+        <div class="mobile-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-clinic-medical me-2"></i>
+                <span class="fw-bold">لوحة التحكم</span>
             </div>
-
-            <div class="d-flex gap-2 flex-wrap align-items-center">
-                <button onclick="backupData()" class="btn btn-interactive text-white" title="حفظ نسخة احتياطية">
-                    <i class="fas fa-download"></i> <span class="d-none d-md-inline">نسخ احتياطي</span>
-                </button>
-                <button onclick="document.getElementById('restoreInput').click()" class="btn btn-interactive text-white" title="استعادة بيانات">
-                    <i class="fas fa-upload"></i> <span class="d-none d-md-inline">استعادة</span>
-                </button>
-                <input type="file" id="restoreInput" style="display:none;" onchange="handleRestoreFile(event)" accept=".json,.xlsx,.xls">
-
-                <button onclick="showFullInventoryReport()" class="btn btn-interactive text-white">
-                    <i class="fas fa-file-invoice"></i> التقرير
-                </button>
-                <button onclick="toggleTheme()" class="btn btn-interactive text-white">
-                    <i class="fas fa-moon" id="themeIcon"></i>
-                </button>
-                <button onclick="toggleLanguage()" class="btn btn-interactive text-white">
-                    <span id="langText">EN</span>
+            
+            <div class="header-controls d-flex">
+                <button onclick="openAddModal()" class="btn btn-add-main">
+                    <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">إضافة دواء</span>
                 </button>
                 
-                <button onclick="confirmLogout()" class="btn btn-interactive btn-logout-icon text-white" title="خروج">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button onclick="showFullInventoryReport()" class="btn"><i class="fas fa-file-alt"></i></button>
+                <button onclick="toggleTheme()" class="btn"><i class="fas fa-moon" id="themeIcon"></i></button>
+                <button onclick="confirmLogout()" class="btn bg-danger text-white"><i class="fas fa-power-off"></i></button>
             </div>
         </div>
 
-        <div class="row px-3 g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card card-custom p-3 text-center card-hover border-start border-4 border-success">
-                    <div class="text-success mb-2"><i class="fas fa-boxes fa-2x"></i></div>
-                    <h6 class="text-muted">الأصناف</h6>
-                    <h3 class="fw-bold" id="totalItems">0</h3>
-                </div>
-            </div>
+        <div class="container-fluid px-3 py-3">
             
-            <div class="col-6 col-md-3">
-                <div class="card card-custom p-3 text-center card-hover border-start border-4 border-primary" onclick="showValueDetails()">
-                    <div class="text-primary mb-2"><i class="fas fa-coins fa-2x"></i></div>
-                    <h6 class="text-muted">القيمة</h6>
-                    <h5 class="fw-bold" id="totalValueSDG" style="font-size:1.1rem">0 SDG</h5>
-                    <small class="text-muted" id="totalValueUSD">0 $</small>
-                </div>
-            </div>
-            
-            <div class="col-6 col-md-3">
-                <div class="card card-custom p-3 text-center card-hover border-start border-4 border-danger" onclick="showExpiryAlerts()">
-                    <div class="text-danger mb-2"><i class="fas fa-hourglass-half fa-2x"></i></div>
-                    <h6 class="text-muted">ينتهي قريباً (90 يوم)</h6>
-                    <h3 class="fw-bold text-danger" id="expiredAlerts">0</h3>
-                </div>
-            </div>
-            
-            <div class="col-6 col-md-3">
-                <div class="card card-custom p-3 text-center card-hover border-start border-4 border-warning" onclick="showLowStock()">
-                    <div class="text-warning mb-2"><i class="fas fa-battery-quarter fa-2x"></i></div>
-                    <h6 class="text-muted">النواقص</h6>
-                    <h3 class="fw-bold text-warning" id="lowStock">0</h3>
-                </div>
-            </div>
-        </div>
-
-        <div class="row px-3">
-            <div class="col-lg-8 mb-4">
-                <div class="card card-custom p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold"><i class="fas fa-table"></i> المخزون الحالي</h5>
-                        <div class="d-flex gap-2">
-                             <input type="text" id="searchInput" onkeyup="searchItems()" class="form-control form-control-sm" style="width: 200px;" placeholder="بحث سريع...">
-                             <button class="btn btn-success btn-sm rounded-pill px-3" onclick="openAddModal()">
-                                <i class="fas fa-plus"></i> إضافة
-                             </button>
-                        </div>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <div class="stat-card border-left-success" onclick="showChartModal('items')">
+                        <i class="fas fa-boxes stat-icon text-success"></i>
+                        <div class="stat-value" id="totalItems">0</div>
+                        <div class="stat-label">إجمالي الأصناف</div>
                     </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-hover table-custom align-middle">
-                            <thead>
-                                <tr>
-                                    <th>الاسم</th>
-                                    <th>التصنيف</th>
-                                    <th>الكمية</th>
-                                    <th>السعر</th>
-                                    <th>الانتهاء</th>
-                                    <th>تحكم</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inventoryBody">
-                                </tbody>
-                        </table>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-left-primary" onclick="showChartModal('value')">
+                        <i class="fas fa-dollar-sign stat-icon text-primary"></i>
+                        <div class="stat-value" id="totalValueSmall">0</div>
+                        <div class="stat-label">القيمة (اضغط للتفاصيل)</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-left-danger" onclick="showChartModal('expiry')">
+                        <i class="fas fa-hourglass-end stat-icon text-danger"></i>
+                        <div class="stat-value text-danger" id="expiredAlerts">0</div>
+                        <div class="stat-label">ينتهي قريباً (3 شهور)</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card border-left-warning" onclick="showChartModal('stock')">
+                        <i class="fas fa-battery-quarter stat-icon text-warning"></i>
+                        <div class="stat-value text-warning" id="lowStock">0</div>
+                        <div class="stat-label">النواقص (أقل من 5)</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-4 mb-4">
-                <div class="card card-custom p-4 mb-3">
-                    <h6 class="fw-bold text-center mb-3">توزيع المخزون</h6>
-                    <canvas id="categoryChart" style="max-height: 200px;"></canvas>
-                </div>
-                <div class="card card-custom p-4">
-                    <h6 class="fw-bold text-center mb-3">آخر النشاطات</h6>
-                    <ul class="list-group list-group-flush small" id="activityLog" style="max-height: 150px; overflow-y: auto;">
-                        <li class="list-group-item text-muted">لا توجد نشاطات حديثة</li>
-                    </ul>
-                </div>
+            <div class="input-group mb-3 shadow-sm rounded-pill overflow-hidden bg-white">
+                <span class="input-group-text border-0 bg-white ps-3"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="searchInput" onkeyup="searchItems()" class="form-control border-0" placeholder="ابحث عن دواء أو مادة فعالة...">
             </div>
-        </div>
-        
-        <div class="footer-version">
-            نظام صيدلية ود المنسي © 2025 | الإصدار v2.0 Smart | تم التطوير بواسطة الذكاء الاصطناعي
-        </div>
-    </div>
 
-    <div class="modal fade" id="logoutModal" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content text-center p-3">
-                <div class="mb-3 text-warning"><i class="fas fa-sign-out-alt fa-3x"></i></div>
-                <h5>هل تود المغادرة؟</h5>
-                <div class="d-flex justify-content-center gap-2 mt-4">
-                    <button class="btn btn-secondary w-50" data-bs-dismiss="modal">تراجع</button>
-                    <button class="btn btn-danger w-50" onclick="performLogout()">خروج</button>
+            <h6 class="text-muted mb-2 px-1">قائمة الأدوية</h6>
+            <div id="inventoryList">
                 </div>
-            </div>
+
         </div>
     </div>
 
     <div class="modal fade" id="addItemModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-pills"></i> إضافة دواء جديد / دفعة جديدة</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">إضافة/تعديل دواء</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-secondary d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-magic text-primary"></i> <strong>المساعد الذكي:</strong> صور علبة الدواء لتعبئة البيانات تلقائياً.</span>
-                        <div class="position-relative">
-                            <button class="btn btn-primary btn-sm rounded-pill">
-                                <i class="fas fa-camera"></i> مسح صورة
-                            </button>
-                            <input type="file" id="scanImageInput" accept="image/*" onchange="processImageAI(this)" 
-                                   style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                    <div class="d-grid mb-3">
+                        <div class="camera-btn-wrapper btn btn-outline-primary py-3 rounded-3 dashed-border">
+                            <i class="fas fa-camera fa-lg mb-1"></i><br>
+                            <strong>التقاط صورة للعلبة (AI)</strong>
+                            <input type="file" id="cameraInput" accept="image/*" capture="environment" class="camera-input" onchange="processImageAI(this)">
+                        </div>
+                        <div id="aiLoading" class="text-center mt-2 text-primary small" style="display:none;">
+                            <span class="spinner-border spinner-border-sm"></span> جاري قراءة البيانات...
                         </div>
                     </div>
-                    <hr>
-                    
+
                     <input type="hidden" id="editIndex">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">اسم الدواء</label>
-                            <input type="text" id="itemName" class="form-control" placeholder="مثال: Panadol Extra">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="small text-muted">اسم الدواء</label>
+                            <input type="text" id="itemName" class="form-control bg-light">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">المادة الفعالة</label>
-                            <input type="text" id="itemActive" class="form-control" placeholder="مثال: Paracetamol">
+                        <div class="col-6">
+                            <label class="small text-muted">الكمية</label>
+                            <input type="number" id="itemQty" class="form-control bg-light">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">التصنيف</label>
-                            <select id="itemCategory" class="form-select">
+                        <div class="col-6">
+                            <label class="small text-muted">السعر</label>
+                            <input type="number" id="itemPrice" class="form-control bg-light">
+                        </div>
+                        <div class="col-12">
+                            <label class="small text-muted">تاريخ الانتهاء</label>
+                            <input type="date" id="itemExp" class="form-control bg-light">
+                        </div>
+                        <div class="col-12">
+                            <label class="small text-muted">التصنيف</label>
+                            <select id="itemCategory" class="form-select bg-light">
                                 <option value="مسكنات">مسكنات</option>
                                 <option value="مضادات حيوية">مضادات حيوية</option>
-                                <option value="فيتامينات">فيتامينات</option>
-                                <option value="شراب">أدوية شراب</option>
-                                <option value="حقن">حقن</option>
                                 <option value="أخرى">أخرى</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">الكمية</label>
-                            <input type="number" id="itemQty" class="form-control">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">سعر الوحدة (ج.س)</label>
-                            <input type="number" id="itemPrice" class="form-control">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label text-danger fw-bold">تاريخ الانتهاء</label>
-                            <input type="date" id="itemExp" class="form-control border-danger">
-                            <small class="text-muted">ملاحظة: المنتجات بنفس الاسم وتواريخ انتهاء مختلفة تعامل كدفعات مستقلة.</small>
+                        <div class="col-12">
+                            <label class="small text-muted">المادة الفعالة</label>
+                            <input type="text" id="itemActive" class="form-control bg-light">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="button" onclick="saveItem()" class="btn btn-success px-4">حفظ السجل</button>
+                <div class="modal-footer border-0 pt-0">
+                    <button onclick="saveItem()" class="btn btn-success w-100 rounded-pill py-2">حفظ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chartModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold" id="chartModalTitle">تحليل البيانات</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h3 id="chartModalValue" class="mb-3 fw-bold text-primary"></h3>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="genericChart"></canvas>
+                    </div>
+                    <p id="chartModalDesc" class="mt-3 text-muted small"></p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="modal fade" id="reportModal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title"><i class="fas fa-chart-line"></i> التقرير الشامل</h5>
+                    <h5 class="modal-title">التقرير الشامل</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="d-flex justify-content-end gap-2 mb-3">
-                        <button onclick="copyReportToClipboard()" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-copy"></i> نسخ للحافظة
-                        </button>
-                        <button onclick="exportReportExcel()" class="btn btn-success btn-sm">
-                            <i class="fas fa-file-excel"></i> تصدير Excel
-                        </button>
+                <div class="modal-body p-0">
+                    <div class="p-2 d-flex justify-content-end bg-light border-bottom">
+                         <button onclick="exportToExcel()" class="btn btn-sm btn-success"><i class="fas fa-file-excel"></i> Excel</button>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped text-center" id="fullReportTable">
-                            <thead class="table-dark">
+                        <table class="table table-striped table-sm mb-0" id="reportTable">
+                            <thead class="table-dark sticky-top">
                                 <tr>
                                     <th>#</th>
                                     <th>الدواء</th>
-                                    <th>المادة الفعالة</th>
                                     <th>الكمية</th>
-                                    <th>السعر (SDG)</th>
-                                    <th>السعر ($)</th>
-                                    <th>الإجمالي (SDG)</th>
+                                    <th>السعر</th>
                                     <th>الانتهاء</th>
                                 </tr>
                             </thead>
                             <tbody id="reportTableBody"></tbody>
-                            <tfoot class="table-light fw-bold">
-                                <tr>
-                                    <td colspan="3">المجاميع الكلية</td>
-                                    <td id="repTotalQty">0</td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td id="repTotalPrice">0</td>
-                                    <td>-</td>
-                                </tr>
-                            </tfoot>
                         </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="restoreModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title">تأكيد استعادة البيانات</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>لقد قمت برفع ملف بيانات. كيف تود التعامل معه؟</p>
-                    <div class="d-grid gap-2">
-                        <button onclick="processRestore('merge')" class="btn btn-primary">
-                            <i class="fas fa-code-branch"></i> دمج مع البيانات الحالية
-                            <br><small>(يضيف الجديد ويحدث الكميات للموجود)</small>
-                        </button>
-                        <button onclick="processRestore('replace')" class="btn btn-danger">
-                            <i class="fas fa-trash-restore"></i> مسح الحالي واستبداله
-                            <br><small>(خطر: سيتم حذف جميع البيانات الحالية)</small>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -418,368 +322,281 @@
     </div>
 
     <script>
-        // --- System Configuration & State ---
+        // --- Data & Config ---
         const ADMIN_PASS = "123456";
-        let inventory = JSON.parse(localStorage.getItem('wm_inventory')) || [];
-        let changeLog = JSON.parse(localStorage.getItem('wm_logs')) || [];
-        let currentLang = 'ar';
-        let exchangeRate = 3000; // سعر الدولار الافتراضي
-        let tempImportData = null; // لتخزين البيانات المستوردة مؤقتاً قبل الدمج
+        let inventory = JSON.parse(localStorage.getItem('wm_inventory_v2')) || [];
+        let currentChart = null;
+        let exchangeRate = 3000;
 
-        // --- 1. Login Logic ---
+        // --- Auth ---
         function checkLogin() {
             if(document.getElementById('passwordInput').value === ADMIN_PASS) {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('mainDashboard').style.display = 'block';
-                initDashboard();
+                renderInventory();
+                updateStats();
             } else {
                 document.getElementById('loginError').style.display = 'block';
             }
         }
-        function handleLoginEnter(e) { if(e.key === 'Enter') checkLogin(); }
-        
+
         function confirmLogout() {
-            new bootstrap.Modal(document.getElementById('logoutModal')).show();
-        }
-        function performLogout() { location.reload(); }
-
-        // --- 2. Dashboard & Visualization ---
-        function initDashboard() {
-            renderTable();
-            updateStats();
-            renderChart();
-            renderLogs();
+            if(confirm("هل تريد الخروج؟")) location.reload();
         }
 
-        function updateStats() {
-            document.getElementById('totalItems').textContent = inventory.length;
+        // --- Core Logic ---
+        function renderInventory(filter = "") {
+            const list = document.getElementById('inventoryList');
+            list.innerHTML = "";
             
-            let totalSDG = inventory.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            let totalUSD = totalSDG / exchangeRate;
-            
-            document.getElementById('totalValueSDG').textContent = totalSDG.toLocaleString() + ' SDG';
-            document.getElementById('totalValueUSD').textContent = totalUSD.toLocaleString(undefined, {maximumFractionDigits: 1}) + ' $';
-
-            // تنبيهات الانتهاء (90 يوم = 3 شهور)
-            const today = new Date();
-            const limitDate = new Date();
-            limitDate.setDate(today.getDate() + 90);
-
-            const expiringCount = inventory.filter(i => {
-                const d = new Date(i.exp);
-                return d >= today && d <= limitDate;
-            }).length;
-            
-            // إضافة المنتهية فعلياً
-            const alreadyExpired = inventory.filter(i => new Date(i.exp) < today).length;
-
-            document.getElementById('expiredAlerts').textContent = expiringCount + alreadyExpired;
-            document.getElementById('lowStock').textContent = inventory.filter(i => i.qty < 5).length;
-        }
-
-        function renderChart() {
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            
-            // تجميع البيانات حسب التصنيف
-            const categories = {};
-            inventory.forEach(item => {
-                categories[item.category] = (categories[item.category] || 0) + item.qty;
-            });
-
-            if(window.myChart) window.myChart.destroy();
-            
-            window.myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(categories),
-                    datasets: [{
-                        data: Object.values(categories),
-                        backgroundColor: ['#2ecc71', '#3498db', '#e74c3c', '#f1c40f', '#9b59b6', '#34495e']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function renderLogs() {
-            const list = document.getElementById('activityLog');
-            list.innerHTML = '';
-            changeLog.slice(-10).reverse().forEach(log => {
-                list.innerHTML += `<li class="list-group-item small">
-                    <i class="fas fa-history text-muted"></i> ${log.action} - ${log.item} 
-                    <span class="text-muted float-end" style="font-size:0.7em">${log.time}</span>
-                </li>`;
-            });
-        }
-
-        function logAction(action, itemName) {
-            const now = new Date().toLocaleString('ar-EG');
-            changeLog.push({ action, item: itemName, time: now });
-            localStorage.setItem('wm_logs', JSON.stringify(changeLog));
-            renderLogs();
-        }
-
-        // --- 3. Inventory CRUD Operations ---
-        function renderTable(filterText = '') {
-            const tbody = document.getElementById('inventoryBody');
-            tbody.innerHTML = '';
-            
-            const filtered = inventory.filter(item => 
-                item.name.toLowerCase().includes(filterText.toLowerCase()) || 
-                item.active.toLowerCase().includes(filterText.toLowerCase())
+            const filtered = inventory.filter(i => 
+                i.name.toLowerCase().includes(filter.toLowerCase()) || 
+                (i.active && i.active.toLowerCase().includes(filter.toLowerCase()))
             );
 
             filtered.forEach((item, index) => {
-                // حساب حالة الانتهاء
+                // Expiry Logic
                 const today = new Date();
                 const expDate = new Date(item.exp);
                 const diffTime = expDate - today;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 
-                let dateClass = '';
-                if(diffDays < 0) dateClass = 'expired';
-                else if(diffDays <= 90) dateClass = 'soon-expired';
+                let expColor = "text-muted";
+                if(diffDays < 0) expColor = "text-danger fw-bold"; // Expired
+                else if(diffDays <= 90) expColor = "text-warning fw-bold"; // Warning (3 months)
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold">${item.name}</td>
-                        <td>${item.category}</td>
-                        <td><span class="badge ${item.qty < 5 ? 'bg-danger' : 'bg-secondary'}">${item.qty}</span></td>
-                        <td>${item.price.toLocaleString()}</td>
-                        <td class="${dateClass}">${item.exp}</td>
-                        <td>
-                            <button onclick="editItem(${index})" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteItem(${index})" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
+                list.innerHTML += `
+                    <div class="inventory-item" onclick="editItem(${index})">
+                        <div class="item-details">
+                            <h6>${item.name}</h6>
+                            <small class="${expColor}"><i class="fas fa-calendar-alt"></i> ${item.exp}</small> | 
+                            <small>${item.price.toLocaleString()} ج.س</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge-qty ms-2">${item.qty}</span>
+                            <i class="fas fa-chevron-left text-muted ms-2" style="font-size: 0.8rem;"></i>
+                        </div>
+                    </div>
                 `;
             });
         }
 
-        function searchItems() {
-            renderTable(document.getElementById('searchInput').value);
+        function updateStats() {
+            // Totals
+            document.getElementById('totalItems').innerText = inventory.length;
+            
+            let totalVal = inventory.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+            
+            // Format Large Numbers (K, M) for mobile space
+            let displayVal = totalVal >= 1000000 ? (totalVal/1000000).toFixed(1) + 'M' : 
+                             totalVal >= 1000 ? (totalVal/1000).toFixed(1) + 'K' : totalVal;
+            
+            document.getElementById('totalValueSmall').innerText = displayVal;
+
+            // Expiry (3 Months = 90 days)
+            const today = new Date();
+            const limit = new Date();
+            limit.setDate(today.getDate() + 90);
+            
+            const expiring = inventory.filter(i => {
+                const d = new Date(i.exp);
+                return d <= limit;
+            }).length;
+            document.getElementById('expiredAlerts').innerText = expiring;
+
+            // Low Stock
+            const low = inventory.filter(i => i.qty < 5).length;
+            document.getElementById('lowStock').innerText = low;
         }
 
+        function searchItems() {
+            renderInventory(document.getElementById('searchInput').value);
+        }
+
+        // --- Modals & CRUD ---
         function openAddModal() {
-            document.getElementById('editIndex').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemActive').value = '';
-            document.getElementById('itemQty').value = '';
-            document.getElementById('itemPrice').value = '';
-            document.getElementById('itemExp').value = '';
+            document.getElementById('editIndex').value = "";
+            document.getElementById('itemName').value = "";
+            document.getElementById('itemQty').value = "";
+            document.getElementById('itemPrice').value = "";
+            document.getElementById('itemExp').value = "";
+            document.getElementById('itemActive').value = "";
+            new bootstrap.Modal(document.getElementById('addItemModal')).show();
+        }
+
+        function editItem(originalIndex) {
+            // Find actual index in main array (in case of filter)
+            // Simplified here assuming render passes direct index or we handle ID.
+            // For now, we reload filtering. In production, use unique IDs.
+            const item = inventory[originalIndex];
+            document.getElementById('editIndex').value = originalIndex;
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemQty').value = item.qty;
+            document.getElementById('itemPrice').value = item.price;
+            document.getElementById('itemExp').value = item.exp;
+            document.getElementById('itemActive').value = item.active || "";
+            document.getElementById('itemCategory').value = item.category || "أخرى";
             new bootstrap.Modal(document.getElementById('addItemModal')).show();
         }
 
         function saveItem() {
-            const index = document.getElementById('editIndex').value;
+            const idx = document.getElementById('editIndex').value;
             const item = {
                 name: document.getElementById('itemName').value,
-                active: document.getElementById('itemActive').value,
-                category: document.getElementById('itemCategory').value,
                 qty: Number(document.getElementById('itemQty').value),
                 price: Number(document.getElementById('itemPrice').value),
-                exp: document.getElementById('itemExp').value
+                exp: document.getElementById('itemExp').value,
+                active: document.getElementById('itemActive').value,
+                category: document.getElementById('itemCategory').value
             };
 
-            if(!item.name || !item.price) return alert('يرجى ملء البيانات الأساسية');
+            if(!item.name || !item.price) return alert("يرجى إدخال البيانات الأساسية");
 
-            if(index === '') {
+            if(idx === "") {
                 inventory.push(item);
-                logAction('إضافة', item.name);
             } else {
-                inventory[index] = item;
-                logAction('تعديل', item.name);
+                if(confirm("هل تريد حفظ التعديلات؟ (اضغط إلغاء للحذف)")) {
+                    inventory[idx] = item;
+                } else {
+                    if(confirm("هل أنت متأكد من الحذف؟")) inventory.splice(idx, 1);
+                }
             }
 
-            localStorage.setItem('wm_inventory', JSON.stringify(inventory));
+            localStorage.setItem('wm_inventory_v2', JSON.stringify(inventory));
             bootstrap.Modal.getInstance(document.getElementById('addItemModal')).hide();
-            initDashboard();
+            renderInventory();
+            updateStats();
         }
 
-        function editItem(index) {
-            const item = inventory[index];
-            document.getElementById('editIndex').value = index;
-            document.getElementById('itemName').value = item.name;
-            document.getElementById('itemActive').value = item.active;
-            document.getElementById('itemCategory').value = item.category;
-            document.getElementById('itemQty').value = item.qty;
-            document.getElementById('itemPrice').value = item.price;
-            document.getElementById('itemExp').value = item.exp;
-            new bootstrap.Modal(document.getElementById('addItemModal')).show();
-        }
-
-        function deleteItem(index) {
-            if(confirm('هل أنت متأكد من حذف هذا الصنف؟')) {
-                logAction('حذف', inventory[index].name);
-                inventory.splice(index, 1);
-                localStorage.setItem('wm_inventory', JSON.stringify(inventory));
-                initDashboard();
-            }
-        }
-
-        // --- 4. AI & Smart Features (OCR) ---
+        // --- AI Camera Logic ---
         async function processImageAI(input) {
-            if (!input.files || !input.files[0]) return;
+            if(!input.files[0]) return;
             
-            const file = input.files[0];
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.style.display = 'flex';
-
+            document.getElementById('aiLoading').style.display = 'block';
+            
             try {
-                // استخدام Tesseract.js للتعرف على النص (يدعم العربية والإنجليزية)
                 const result = await Tesseract.recognize(
-                    file,
-                    'eng+ara', 
-                    { logger: m => document.getElementById('loadingText').innerText = `جاري التحليل: ${(m.progress * 100).toFixed(0)}%` }
+                    input.files[0],
+                    'eng+ara',
+                    { logger: m => console.log(m) }
                 );
                 
-                const text = result.data.text.toLowerCase();
+                const text = result.data.text;
+                // Simple parsing heuristics
+                const lines = text.split('\n').filter(l => l.length > 3);
+                if(lines.length > 0) document.getElementById('itemName').value = lines[0]; // Guess name
                 
-                // --- معالجة بسيطة للنص المستخرج (Smart Parsing Logic) ---
-                // ملاحظة: هذه خوارزميات تقريبية تعتمد على جودة الصورة
+                // Try to find numbers for price/qty
+                // This is basic; in real app needs regex
                 
-                // 1. محاولة تخمين الاسم (غالباً أول سطر أو أكبر خط)
-                const lines = text.split('\n').filter(l => l.trim().length > 3);
-                if(lines.length > 0) document.getElementById('itemName').value = lines[0].replace(/[^a-zA-Z\u0600-\u06FF ]/g, '');
-
-                // 2. محاولة البحث عن تاريخ (YYYY-MM-DD او MM/YYYY)
-                const dateMatch = text.match(/(\d{4}[-/]\d{2}[-/]\d{2})/) || text.match(/(\d{2}[-/]\d{4})/);
-                if(dateMatch) {
-                    // تحويل التاريخ لصيغة input date
-                    // هذا يحتاج منطق معقد للتواريخ، سنضع القيمة الخام للمستخدم ليصححها إذا لزم الأمر
-                    // لكن لتبسيط الكود لن نملأ التاريخ تلقائياً لتجنب الأخطاء الكارثية
-                }
-
-                alert('تم استخراج البيانات! يرجى المراجعة والتصحيح.');
-
-            } catch (error) {
-                console.error(error);
-                alert('فشل التعرف على الصورة. يرجى المحاولة مرة أخرى أو الإدخال يدوياً.');
+                alert("تم استخراج البيانات! يرجى المراجعة.");
+            } catch (e) {
+                alert("تعذر قراءة الصورة");
             } finally {
-                overlay.style.display = 'none';
+                document.getElementById('aiLoading').style.display = 'none';
             }
         }
 
-        // --- 5. Reports & Excel Export/Copy ---
+        // --- Charts Modal Logic ---
+        function showChartModal(type) {
+            const modalTitle = document.getElementById('chartModalTitle');
+            const modalVal = document.getElementById('chartModalValue');
+            const modalDesc = document.getElementById('chartModalDesc');
+            const ctx = document.getElementById('genericChart').getContext('2d');
+
+            if(currentChart) currentChart.destroy();
+
+            new bootstrap.Modal(document.getElementById('chartModal')).show();
+
+            let data, labels, colors, title;
+
+            if(type === 'value') {
+                title = "توزيع القيمة المالية";
+                const totalSDG = inventory.reduce((a, b) => a + (b.price * b.qty), 0);
+                const totalUSD = totalSDG / exchangeRate;
+                
+                modalVal.innerText = `${totalSDG.toLocaleString()} SDG`;
+                modalDesc.innerText = `ما يعادل تقريباً ${totalUSD.toFixed(2)} دولار`;
+
+                // Chart: Categories Value
+                const cats = {};
+                inventory.forEach(i => cats[i.category] = (cats[i.category]||0) + (i.price*i.qty));
+                
+                currentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(cats),
+                        datasets: [{
+                            data: Object.values(cats),
+                            backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545']
+                        }]
+                    }
+                });
+
+            } else if (type === 'expiry') {
+                title = "حالة الصلاحية";
+                const today = new Date();
+                const limit = new Date(); limit.setDate(today.getDate() + 90);
+                
+                const expired = inventory.filter(i => new Date(i.exp) < today).length;
+                const soon = inventory.filter(i => new Date(i.exp) >= today && new Date(i.exp) <= limit).length;
+                const safe = inventory.length - expired - soon;
+
+                modalVal.innerText = `${expired + soon} صنف خطر`;
+                modalDesc.innerText = "أصناف منتهية أو ستنتهي خلال 3 شهور";
+
+                currentChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['منتهي', 'قريب الانتهاء', 'آمن'],
+                        datasets: [{
+                            data: [expired, soon, safe],
+                            backgroundColor: ['#dc3545', '#ffc107', '#198754']
+                        }]
+                    }
+                });
+            } else {
+                 // Fallback or other types like Stock
+                 modalTitle.innerText = "تفاصيل";
+            }
+            
+            if(title) modalTitle.innerText = title;
+        }
+
+        // --- Reports ---
         function showFullInventoryReport() {
             const tbody = document.getElementById('reportTableBody');
-            tbody.innerHTML = '';
-            let totalQty = 0;
-            let totalVal = 0;
-
+            tbody.innerHTML = "";
             inventory.forEach((item, i) => {
-                const usdPrice = (item.price / exchangeRate).toFixed(2);
-                const lineTotal = item.price * item.qty;
-                
-                totalQty += item.qty;
-                totalVal += lineTotal;
-
                 tbody.innerHTML += `
                     <tr>
                         <td>${i+1}</td>
                         <td>${item.name}</td>
-                        <td>${item.active}</td>
                         <td>${item.qty}</td>
-                        <td>${item.price.toLocaleString()}</td>
-                        <td>${usdPrice}</td>
-                        <td>${lineTotal.toLocaleString()}</td>
+                        <td>${item.price}</td>
                         <td>${item.exp}</td>
                     </tr>
                 `;
             });
-
-            document.getElementById('repTotalQty').textContent = totalQty;
-            document.getElementById('repTotalPrice').textContent = totalVal.toLocaleString() + ' SDG';
-            
             new bootstrap.Modal(document.getElementById('reportModal')).show();
         }
 
-        function exportReportExcel() {
-            // استخدام SheetJS للتصدير الاحترافي
-            const table = document.getElementById('fullReportTable');
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Sheet JS"});
-            XLSX.writeFile(wb, "Inventory_Report_Smart.xlsx");
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(inventory);
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, "WadAlmansi_Report.xlsx");
         }
 
-        function copyReportToClipboard() {
-            // نسخ الجدول كـ HTML (يتعرف عليه Excel و Word عند اللصق)
-            const range = document.createRange();
-            range.selectNode(document.getElementById('fullReportTable'));
-            window.getSelection().removeAllRanges(); 
-            window.getSelection().addRange(range); 
-            document.execCommand('copy');
-            window.getSelection().removeAllRanges();
-            alert('تم نسخ التقرير! يمكنك لصقه الآن في Excel (Ctrl+V).');
-        }
-
-        // --- 6. Backup & Restore (with Merge Logic) ---
-        function backupData() {
-            const dataStr = JSON.stringify(inventory, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-        }
-
-        function handleRestoreFile(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    // Check if JSON or Excel (Advanced)
-                    // For simplicity, we assume JSON primarily here
-                    tempImportData = JSON.parse(e.target.result);
-                    new bootstrap.Modal(document.getElementById('restoreModal')).show();
-                } catch(err) {
-                    alert('الملف غير صالح.');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function processRestore(mode) {
-            if(!tempImportData) return;
-
-            if(mode === 'replace') {
-                inventory = tempImportData;
-            } else if (mode === 'merge') {
-                // دمج ذكي: إذا وجد نفس الاسم ونفس تاريخ الانتهاء، يجمع الكمية. وإلا يضيف سطر جديد
-                tempImportData.forEach(newItem => {
-                    const existing = inventory.find(i => i.name === newItem.name && i.exp === newItem.exp);
-                    if(existing) {
-                        existing.qty += newItem.qty;
-                    } else {
-                        inventory.push(newItem);
-                    }
-                });
-            }
-
-            localStorage.setItem('wm_inventory', JSON.stringify(inventory));
-            logAction('استعادة', mode === 'merge' ? 'دمج بيانات' : 'استبدال كامل');
-            location.reload();
-        }
-
-        // --- Utilities ---
         function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-bs-theme');
-            const newTheme = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-bs-theme', newTheme);
-            document.getElementById('themeIcon').className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            const h = document.documentElement;
+            if(h.getAttribute('data-bs-theme') === 'dark') {
+                h.setAttribute('data-bs-theme', 'light');
+            } else {
+                h.setAttribute('data-bs-theme', 'dark');
+            }
         }
-        
-        function toggleLanguage() {
-            // Implementation simplified for demo (Just toggles text)
-            const btn = document.getElementById('langText');
-            btn.textContent = btn.textContent === 'EN' ? 'AR' : 'EN';
-            alert('Language switch logic hook (Extendable)');
-        }
-
     </script>
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
