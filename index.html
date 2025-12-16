@@ -97,8 +97,8 @@
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="card card-custom p-3 text-danger card-link" onclick="showExpiredItems()">
-                    <h5><i class="fas fa-exclamation-triangle"></i> <span data-translate="expiredAlerts">تنبيهات الانتهاء</span></h5>
+                <div class="card card-custom p-3 text-danger card-link" onclick="showThirtyDayCountdown()">
+                    <h5><i class="fas fa-exclamation-triangle"></i> <span data-translate="expiredAlerts">تنبيهات الانتهاء (30 يوم)</span></h5>
                     <h3 id="expiredAlerts">0</h3>
                 </div>
             </div>
@@ -110,11 +110,7 @@
             </div>
         </div>
         
-        <div id="expiryCountdownSection" class="card card-custom mx-3 p-4 mt-1" style="display:none;">
-            <h5 class="text-warning"><i class="fas fa-clock"></i> <span data-translate="countdownTitle">تنبيه: منتجات تنتهي خلال 30 يوماً</span></h5>
-            <div id="countdownList" class="row">
-                </div>
-        </div>
+        <div id="expiryCountdownSection" style="display:none;"></div>
 
         <div class="card card-custom mx-3 p-4 mt-3">
             <h4 data-translate="dashboardHeader">لوحة المعلومات والتقارير</h4>
@@ -245,7 +241,7 @@
                                 <tr>
                                     <th data-translate="tableDrugName">اسم الدواء</th>
                                     <th data-translate="tableCategory">التصنيف</th>
-                                    <th id="alertsModalHeaderExtra" data-translate="tableExpiryDate">تاريخ الانتهاء</th>
+                                    <th id="alertsModalHeaderExtra" data-translate="lowStockHeader">الحد الأدنى (5)</th>
                                     <th data-translate="tableQty">الكمية المتبقية</th>
                                 </tr>
                             </thead>
@@ -278,6 +274,24 @@
         </div>
     </div>
 
+    <div class="modal fade" id="countdownModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-clock"></i> <span data-translate="countdownTitle">تنبيه: العد التنازلي للانتهاء (30 يوماً)</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="countdownListBody">
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="close">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -287,7 +301,7 @@
                 appTitle: 'صيدلية ود المنسي - نظام الإدارة', pharmacyName: 'صيدلية ود المنسي', pharmacyNameHeader: 'صيدلية ود المنسي', systemDesc: 'نظام إدارة المخزون والمبيعات',
                 placeholderPassword: 'أدخل كلمة المرور', login: 'دخول', loginError: 'كلمة المرور غير صحيحة!', logout: 'تسجيل خروج',
                 langSwitch: 'English', themeSwitch: 'الوضع الليلي', drugDetailsTitle: 'تفاصيل الدواء',
-                totalItems: 'إجمالي الأصناف', totalValue: 'قيمة المخزون', expiredAlerts: 'تنبيهات الانتهاء', lowStock: 'تنبيهات النواقص',
+                totalItems: 'إجمالي الأصناف', totalValue: 'قيمة المخزون', expiredAlerts: 'تنبيهات الانتهاء (30 يوم)', lowStock: 'تنبيهات النواقص',
                 dashboardHeader: 'لوحة المعلومات والتقارير', graphStockTitle: 'قيمة المخزون حسب التصنيف', graphExpTitle: 'الأدوية القريبة من الانتهاء (أصناف)',
                 exportExcel: 'تصدير إلى Excel', backupData: 'حفظ نسخة احتياطية', restoreData: 'استعادة البيانات',
                 inventoryTableTitle: 'جدول المخزون الحالي', placeholderSearch: 'بحث عن دواء...', filterAll: 'كل التصنيفات',
@@ -299,15 +313,17 @@
                 chartLabelItems: 'عدد الأصناف', chartLabelExpired: 'منتهية', chartLabelSoon: 'قريباً', chartLabelSafe: 'آمنة',
                 confirmRestore: 'هل أنت متأكد من استعادة البيانات؟ سيتم مسح البيانات الحالية.', restoreSuccess: 'تم استعادة البيانات بنجاح!', restoreError: 'خطأ في ملف الاستعادة.', restoreCSVWarning: 'تحذير: البيانات المستوردة من CSV/Excel يجب أن تكون بنفس ترتيب رؤوس الأعمدة (اسم الدواء, المادة الفعالة, التصنيف, الكمية, السعر, تاريخ الانتهاء).',
                 exportFileName: 'تقرير-صيدلية-ود-المنسي',
-                alertListTitle: 'قائمة التنبيهات', listExpired: 'قائمة الأصناف المنتهية الصلاحية', listLowStock: 'قائمة الأصناف التي أوشكت على النفاذ', lowStockHeader: 'الحد الأدنى (5)',
-                countdownTitle: 'تنبيه: منتجات تنتهي خلال 30 يوماً', countdownText: 'يوم/أيام متبقية', inventoryStatusTitle: 'حالة المخزون حسب الانتهاء',
+                alertListTitle: 'قائمة التنبيهات', listLowStock: 'قائمة الأصناف التي أوشكت على النفاذ', lowStockHeader: 'الحد الأدنى (5)',
+                countdownTitle: 'تنبيه: العد التنازلي للانتهاء (30 يوماً)', countdownText: 'يوم/أيام متبقية', inventoryStatusTitle: 'حالة المخزون حسب الانتهاء',
+                countdownNoItems: 'لا توجد أدوية تنتهي خلال الثلاثين يوماً القادمة.',
+                daysLeft: 'يوم متبقي',
             },
             en: {
                 appTitle: 'Wad Almansi Pharmacy - Management System', pharmacyName: 'Wad Almansi Pharmacy', pharmacyNameHeader: 'Wad Almansi Pharmacy', systemDesc: 'Inventory and Sales Management System',
                 placeholderPassword: 'Enter Password', login: 'Login', loginError: 'Incorrect Password!', logout: 'Logout',
                 langSwitch: 'العربية', themeSwitch: 'Day Mode', drugDetailsTitle: 'Drug Details',
-                totalItems: 'Total Items', totalValue: 'Stock Value', expiredAlerts: 'Expiry Alerts', lowStock: 'Low Stock Alerts',
-                dashboardHeader: 'Dashboard and Reports', graphStockTitle: 'Stock Value by Category', graphExpTitle: 'Near Expiry Drugs (Items)',
+                totalItems: 'Total Items', totalValue: 'Stock Value', expiredAlerts: 'Expiry Alerts (30 Days)', lowStock: 'Low Stock Alerts',
+                dashboardHeader: 'Dashboard and Reports', graphStockTitle: 'Stock Value by Category', graphExpTitle: 'Near Expiring Drugs (Items)',
                 exportExcel: 'Export to Excel', backupData: 'Backup Data', restoreData: 'Restore Data',
                 inventoryTableTitle: 'Current Inventory Table', placeholderSearch: 'Search for drug...', filterAll: 'All Categories',
                 tableDrugName: 'Drug Name', tableActiveIngredient: 'Active Ingredient', tableCategory: 'Category', tableQty: 'Quantity Left', tablePrice: 'Unit Price (SDG)', tableExpiryDate: 'Expiry Date', tableActions: 'Actions',
@@ -318,8 +334,10 @@
                 chartLabelItems: 'Item Count', chartLabelExpired: 'Expired', chartLabelSoon: 'Soon', chartLabelSafe: 'Safe',
                 confirmRestore: 'Are you sure you want to restore data? Current data will be erased.', restoreSuccess: 'Data restored successfully!', restoreError: 'Error in restoration file.', restoreCSVWarning: 'Warning: Data imported from CSV/Excel must follow the header order (Drug Name, Active Ingredient, Category, Quantity, Price, Expiry Date).',
                 exportFileName: 'Wad-Almansi-Pharmacy-Report',
-                alertListTitle: 'Alert List', listExpired: 'Expired Items List', listLowStock: 'Low Stock Items List', lowStockHeader: 'Min Stock (5)',
-                countdownTitle: 'Alert: Products Expiring within 30 days', countdownText: 'days left', inventoryStatusTitle: 'Inventory Status by Expiry',
+                alertListTitle: 'Alert List', listLowStock: 'Low Stock Items List', lowStockHeader: 'Min Stock (5)',
+                countdownTitle: 'Alert: Expiry Countdown (30 Days)', countdownText: 'days left', inventoryStatusTitle: 'Inventory Status by Expiry',
+                countdownNoItems: 'No items expiring in the next 30 days.',
+                daysLeft: 'days left',
             }
         };
 
@@ -410,7 +428,6 @@
             loadItems();
             updateReports();
             updateCharts(); 
-            updateCountdownList(); 
         }
 
         function loadItems() {
@@ -537,10 +554,16 @@
             document.getElementById('lowStock').innerText = lowStockCount;
 
             const today = new Date();
-            const expiredCount = inventory.filter(item => new Date(item.exp) < today).length;
-            document.getElementById('expiredAlerts').innerText = expiredCount;
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
             
-            updateCountdownList(); 
+            // الأصناف التي ستنتهي خلال 30 يوماً أو انتهت بالفعل
+            const criticalAlerts = inventory.filter(item => {
+                const expiryDate = new Date(item.exp);
+                return expiryDate <= thirtyDaysFromNow;
+            }).length;
+            
+            document.getElementById('expiredAlerts').innerText = criticalAlerts;
         }
 
         // وظيفة تحديث الرسوم البيانية (الرئيسية والمنبثقة)
@@ -620,39 +643,7 @@
             modal.show();
         }
         
-        // --- 9. وظيفة عرض قائمة المنتهية (Alerts Modal) ---
-        function showExpiredItems() {
-            const today = new Date();
-            const expiredItems = inventory.filter(item => new Date(item.exp) < today);
-            
-            const title = translations[currentLang].listExpired;
-            const headerExtra = translations[currentLang].tableExpiryDate;
-            let bodyContent = '';
-
-            if (expiredItems.length === 0) {
-                 bodyContent = `<tr><td colspan="4" class="text-center text-muted">لا توجد أصناف منتهية حالياً.</td></tr>`;
-            } else {
-                expiredItems.forEach(item => {
-                    bodyContent += `
-                        <tr class="table-danger">
-                            <td>${item.name}</td>
-                            <td>${item.category}</td>
-                            <td>${item.exp}</td>
-                            <td>${item.qty}</td>
-                        </tr>
-                    `;
-                });
-            }
-
-            document.getElementById('alertsModalTitle').textContent = title;
-            document.getElementById('alertsModalHeaderExtra').textContent = headerExtra;
-            document.getElementById('alertsModalBody').innerHTML = bodyContent;
-            
-            const modal = new bootstrap.Modal(document.getElementById('alertsModal'));
-            modal.show();
-        }
-        
-        // --- 10. وظيفة عرض قائمة النواقص (Alerts Modal) ---
+        // --- 9. وظيفة عرض قائمة النواقص (Alerts Modal) ---
         function showLowStockItems() {
             const lowStockItems = inventory.filter(item => item.qty < 5);
             
@@ -668,7 +659,7 @@
                         <tr class="table-warning">
                             <td>${item.name}</td>
                             <td>${item.category}</td>
-                            <td>${item.qty < 5 ? 'ناقص' : 'آمن'}</td>
+                            <td>${item.qty < 5 ? translations[currentLang].lowStockHeader : 'آمن'}</td>
                             <td>${item.qty}</td>
                         </tr>
                     `;
@@ -683,50 +674,97 @@
             modal.show();
         }
         
-        // --- 11. واجهة تنبيه العد التنازلي لـ 30 يوماً (الواجهة الجديدة) ---
-        function updateCountdownList() {
+        // --- 10. وظيفة عرض العد التنازلي لآخر 30 يوم (Countdown Modal) ---
+        function showThirtyDayCountdown() {
             const today = new Date();
-            const thirtyDaysFromNow = new Date();
+            // لضمان دقة العد التنازلي، يتم ضبط اليوم إلى منتصف الليل
+            today.setHours(0, 0, 0, 0); 
+            
+            const thirtyDaysFromNow = new Date(today);
             thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
             
-            // الأصناف التي تنتهي خلال (اليوم وحتى) الـ 30 يوماً القادمة
-            const soonToExpire = inventory.filter(item => {
+            // 1. تصفية الأصناف: التي تنتهي خلال 30 يوماً أو انتهت بالفعل
+            const countdownItems = inventory.filter(item => {
                 const expiryDate = new Date(item.exp);
-                return expiryDate >= today && expiryDate <= thirtyDaysFromNow;
+                // تجاوز وقت الساعة والدقائق لتجنب مشاكل التوقيت
+                expiryDate.setHours(0, 0, 0, 0); 
+                return expiryDate <= thirtyDaysFromNow; 
             }).sort((a, b) => new Date(a.exp) - new Date(b.exp)); // ترتيب حسب الأقرب انتهاءً
 
-            const listContainer = document.getElementById('countdownList');
+            const listContainer = document.getElementById('countdownListBody');
             listContainer.innerHTML = '';
             
-            if (soonToExpire.length > 0) {
-                document.getElementById('expiryCountdownSection').style.display = 'block';
-                
-                soonToExpire.forEach(item => {
+            if (countdownItems.length === 0) {
+                listContainer.innerHTML = `<div class="alert alert-success text-center">${translations[currentLang].countdownNoItems}</div>`;
+            } else {
+                countdownItems.forEach(item => {
                     const expiryDate = new Date(item.exp);
+                    expiryDate.setHours(0, 0, 0, 0); 
+
+                    // حساب الأيام المتبقية (أو التي تجاوزت)
                     const diffTime = expiryDate - today;
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
-                    // تحديد درجة التنبيه (أقل من 7 أيام لون أحمر)
-                    const colorClass = diffDays < 7 ? 'text-danger fw-bold' : 'text-warning';
+                    let progressValue; // القيمة التي تمثل شريط التقدم (100% هو بداية التنبيه)
+                    let progressBarClass;
+                    let statusText;
+                    
+                    if (diffDays <= 0) {
+                        // منتهية بالفعل
+                        progressValue = 100; // شريط ممتلئ
+                        progressBarClass = 'bg-danger';
+                        statusText = `<strong class="text-danger"><i class="fas fa-times-circle"></i> ${translations[currentLang].chartLabelExpired}</strong>`;
+                    } else if (diffDays <= 30) {
+                        // العد التنازلي لآخر 30 يوم
+                        progressValue = ((30 - diffDays) / 30) * 100;
+                        progressBarClass = diffDays < 7 ? 'bg-danger' : 'bg-warning';
+                        statusText = `<strong class="text-warning"><i class="fas fa-exclamation-triangle"></i> ${diffDays} ${translations[currentLang].daysLeft}</strong>`;
+                    } else {
+                        // هذا الجزء لا يفترض أن يحدث بسبب التصفية، لكن للأمان
+                        progressValue = 0;
+                        progressBarClass = 'bg-success';
+                        statusText = `<strong class="text-success"><i class="fas fa-check-circle"></i> آمن (متبقي ${diffDays} يوم)</strong>`;
+                    }
                     
                     const itemHtml = `
-                        <div class="col-md-6 mb-3">
-                            <div class="card card-custom p-3 countdown-item">
-                                <h6>${item.name}</h6>
-                                <p class="mb-1 small">${translations[currentLang].tableCategory}: ${item.category} | ${translations[currentLang].tableQty}: ${item.qty}</p>
-                                <p class="mb-0 ${colorClass}">
-                                    <i class="fas fa-calendar-alt"></i> ${diffDays} ${translations[currentLang].countdownText}
-                                </p>
+                        <div class="card card-custom p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6>${item.name} (${item.category})</h6>
+                                    <p class="mb-1 small"> ${translations[currentLang].tableQty}: ${item.qty} | ${translations[currentLang].tableExpiryDate}: ${item.exp}</p>
+                                </div>
+                                <div class="text-end">${statusText}</div>
+                            </div>
+                            <div class="progress mt-2" style="height: 15px;">
+                                <div class="progress-bar ${progressBarClass}" role="progressbar" 
+                                     style="width: ${progressValue}%;" 
+                                     aria-valuenow="${progressValue}" aria-valuemin="0" aria-valuemax="100">
+                                     ${progressValue.toFixed(0)}%
+                                </div>
                             </div>
                         </div>
                     `;
                     listContainer.innerHTML += itemHtml;
                 });
-            } else {
-                document.getElementById('expiryCountdownSection').style.display = 'none';
             }
+
+            const modal = new bootstrap.Modal(document.getElementById('countdownModal'));
+            modal.show();
         }
         
+        // --- 11. وظيفة عرض التفاصيل (Modal) ---
+        function showDetails(index) {
+            const item = inventory[index];
+            document.getElementById('detailName').textContent = item.name;
+            document.getElementById('detailActive').textContent = item.active;
+            document.getElementById('detailCategory').textContent = item.category;
+            document.getElementById('detailQty').textContent = item.qty;
+            document.getElementById('detailPrice').textContent = item.price;
+            document.getElementById('detailExp').textContent = item.exp;
+
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+        }
 
         // --- 5. النسخ الاحتياطي والاستعادة (Backup/Restore) ---
         function backupData() {
@@ -864,7 +902,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             applyTheme(currentTheme);
             applyLanguage(currentLang);
-            // يتم استدعاء updateCharts و updateCountdownList ضمن saveData و loadItems
         });
     </script>
 </body>
