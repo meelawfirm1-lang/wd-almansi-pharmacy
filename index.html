@@ -163,8 +163,8 @@
                 </button>
                 <ul class="dropdown-menu shadow border-0 rounded-3">
                     <li><h6 class="dropdown-header">إدارة البيانات</h6></li>
-                    <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> نسخ احتياطي (JSON)</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> استعادة (JSON)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> نسخ احتياطي</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> استعادة</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="document.getElementById('importExcelFile').click()"><i class="fas fa-file-excel text-success"></i> إضافة بيانات من Excel</a></li>
                     <li><hr class="dropdown-divider"></li>
@@ -728,6 +728,19 @@
             reader.readAsText(file);
         }
 
+        function convertExcelDate(excelDate) {
+            // إذا كان التاريخ بالفعل في صيغة سلسلة (مثل YYYY-MM-DD)، لا حاجة للتحويل
+            if (typeof excelDate === 'string' && excelDate.includes('-')) {
+                return excelDate;
+            }
+            // صيغة Excel تبدأ من 1 يناير 1900. 
+            // 25569 هو عدد الأيام بين 1900-01-01 و 1970-01-01.
+            const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+            // تنسيق التاريخ إلى YYYY-MM-DD
+            return date.toISOString().split('T')[0];
+        }
+
+
         function importExcelData(input) {
             const file = input.files[0];
             if(!file) return;
@@ -739,21 +752,41 @@
                     const workbook = XLSX.read(data, {type: 'array'});
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    // تحويل بيانات الإكسل إلى تنسيق JSON (يجب أن تكون الرؤوس متطابقة: name, qty, price, exp, active, buyPrice)
+
+                    // *** الإصلاح الأول: إزالة خاصية range: 1 لضمان قراءة البيانات حتى لو لم تكن الرؤوس في الصف الأول ***
                     const json = XLSX.utils.sheet_to_json(worksheet, {
                         header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'], // تحديد الرؤوس المتوقعة
-                        range: 1 // تجاهل الصف الأول كرؤوس إذا لم تكن مطابقة
+                        raw: false // قراءة القيم المنسقة بدلاً من القيم الخام، لكن سنعتمد على التحويل يدوياً
                     });
 
                     // تنظيف وتحويل التواريخ والأرقام
-                    const loadedData = json.map(item => ({
-                        name: item.name || 'Unknown',
-                        qty: Number(item.qty) || 0,
-                        price: Number(item.price) || 0, // سعر البيع
-                        buyPrice: Number(item.buyPrice) || 0, // سعر الشراء
-                        exp: item.exp ? new Date(Math.round((item.exp - 25569) * 86400 * 1000)).toISOString().split('T')[0] : 'غير معروف', // تحويل تاريخ إكسل
-                        active: item.active || ''
-                    })).filter(item => item.name !== 'Unknown' && item.qty > 0);
+                    const loadedData = json.map(item => {
+                        let expDate = item.exp;
+                        // *** الإصلاح الثاني: استخدام دالة التحويل المحدثة للتواريخ ***
+                        if (expDate) {
+                            // إذا كانت القيمة رقمية (تاريخ Excel)، قم بتحويلها
+                            if (!isNaN(parseFloat(expDate)) && isFinite(expDate)) {
+                                expDate = convertExcelDate(parseFloat(expDate));
+                            } else {
+                                // إذا كانت سلسلة نصية بالفعل، استخدمها كما هي
+                                expDate = String(expDate).split('T')[0]; 
+                            }
+                        }
+
+                        return {
+                            name: item.name || 'Unknown',
+                            qty: Number(item.qty) || 0,
+                            price: Number(item.price) || 0, // سعر البيع
+                            buyPrice: Number(item.buyPrice) || 0, // سعر الشراء
+                            exp: expDate || 'غير معروف',
+                            active: item.active || ''
+                        };
+                    }).filter(item => item.name !== 'Unknown' && item.qty > 0);
+
+                    if (loadedData.length === 0) {
+                        throw new Error('لم يتم العثور على أي بيانات صالحة بعد التحويل. تأكد من تسمية الأعمدة بشكل دقيق.');
+                    }
+
 
                     const mergeOption = prompt('كيف تريد التعامل مع بيانات Excel؟\n1. merge (دمج مع الموجود)\n2. add_new (إضافة كصنف جديد)', 'merge');
                     
@@ -764,7 +797,7 @@
                     }
                 } catch(err) { 
                     console.error(err);
-                    alert('فشل في استيراد ملف Excel. تأكد من أن التنسيق صحيح (name, qty, price, exp, active, buyPrice).');
+                    alert('فشل في استيراد ملف Excel. تأكد من أن الأعمدة مرتبة ومسمّاة هكذا: name, qty, price, exp, active, buyPrice.');
                 }
             };
             reader.readAsArrayBuffer(file);
