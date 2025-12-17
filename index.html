@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pharmacy Inventory Management</title>
+    <title>Pharmacy Inventory Management - v2.3</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f9b0f">
-    
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" id="bootstrapLib">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -32,55 +30,19 @@
             --card-bg: #1e1e1e;
         }
 
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            transition: 0.3s;
-            overflow-x: hidden;
-        }
-
-        .card, .stat-card, .item-card, .mobile-header, .modal-content, #exchangeRateContainer {
-            background-color: var(--card-bg) !important;
-            color: var(--text-main) !important;
-        }
-
-        #loginSection {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-            background: linear-gradient(135deg, #0f9b0f, #004d00);
-            z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-
-        .mobile-header {
-            padding: 10px 15px; border-radius: 0 0 20px 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            position: sticky; top: 0; z-index: 1000;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .btn-tool {
-            width: 38px; height: 38px; border-radius: 50%; border: none;
-            background: rgba(0,0,0,0.05); color: var(--text-main);
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .btn-main-add {
-            background: var(--primary-color); color: white;
-            padding: 8px 18px; border-radius: 30px; font-weight: bold; border: none;
-        }
-
-        .stat-card {
-            border-radius: var(--card-radius); padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03); border-bottom: 4px solid transparent;
-        }
-
-        .item-card {
-            border-radius: 12px; margin-bottom: 10px; padding: 12px;
-            display: flex; justify-content: space-between; align-items: center;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-
+        body { background-color: var(--bg-light); color: var(--text-main); font-family: 'Segoe UI', Tahoma, sans-serif; transition: 0.3s; overflow-x: hidden; }
+        .card, .stat-card, .item-card, .mobile-header, .modal-content, #exchangeRateContainer { background-color: var(--card-bg) !important; color: var(--text-main) !important; }
+        #loginSection { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #0f9b0f, #004d00); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .mobile-header { padding: 10px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+        .btn-tool { width: 38px; height: 38px; border-radius: 50%; border: none; background: rgba(128,128,128,0.1); color: var(--text-main); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-main-add { background: var(--primary-color); color: white; padding: 8px 18px; border-radius: 30px; font-weight: bold; border: none; box-shadow: 0 4px 10px rgba(15, 155, 15, 0.3); }
+        .stat-card { border-radius: var(--card-radius); padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); border-bottom: 4px solid transparent; cursor: pointer; }
+        .item-card { background: white; border-radius: 12px; margin-bottom: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .badge-qty { background: #e9ecef; color: #333; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
+        .camera-trigger { border: 2px dashed #0d6efd; background: rgba(13, 110, 253, 0.05); color: #0d6efd; padding: 20px; text-align: center; border-radius: 12px; position: relative; }
+        .camera-input { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; }
         .d-none-custom { display: none !important; }
+        .profit-calculator { padding: 10px; border-radius: 8px; background: rgba(25, 135, 84, 0.1); }
     </style>
 </head>
 <body>
@@ -101,7 +63,8 @@
             <div class="d-flex gap-2">
                 <div class="dropdown">
                     <button class="btn-tool" data-bs-toggle="dropdown"><i class="fas fa-cog"></i></button>
-                    <ul class="dropdown-menu shadow border-0">
+                    <ul class="dropdown-menu shadow border-0 rounded-3">
+                        <li><h6 class="dropdown-header" data-tr="data_mgmt">Data Management</h6></li>
                         <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> <span data-tr="backup">Backup</span></a></li>
                         <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> <span data-tr="restore">Restore</span></a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -113,78 +76,90 @@
                 <button class="btn-tool" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
                 <button class="btn-tool" onclick="toggleDarkMode()"><i class="fas fa-moon" id="themeIcon"></i></button>
             </div>
-            <h6 class="m-0 fw-bold text-success" data-tr="header_title">Inventory</h6>
+            <h6 class="m-0 fw-bold text-success" data-tr="header_title">Pharmacy Inventory</h6>
             <button onclick="openAddModal()" class="btn-main-add"><i class="fas fa-plus"></i> <span data-tr="add_btn">Add</span></button>
         </div>
 
         <div class="container-fluid p-3">
             <div id="exchangeRateContainer" class="d-flex align-items-center justify-content-between mb-3 p-2 rounded-3 border">
-                <label class="small fw-bold m-0"><i class="fas fa-dollar-sign text-success"></i> <span data-tr="usd_rate">USD Rate:</span></label>
+                <label class="small fw-bold m-0 text-muted"><i class="fas fa-dollar-sign text-success"></i> <span data-tr="usd_rate">USD Rate (SDG):</span></label>
                 <input type="number" id="exchangeRateInput" onchange="updateExchangeRate(this.value)" class="form-control form-control-sm text-center" style="width: 100px;">
             </div>
 
-            <div class="row g-2 mb-3">
-                <div class="col-6"><div class="stat-card border-success"><h6 class="small mb-1" data-tr="stat_items">Items</h6><h4 class="fw-bold m-0" id="statCount">0</h4></div></div>
-                <div class="col-6"><div class="stat-card border-primary"><h6 class="small mb-1" data-tr="stat_value">Value</h6><h5 class="fw-bold m-0" id="statValue">0</h5></div></div>
+            <div class="row g-2 mb-3 text-center">
+                <div class="col-6"><div class="stat-card border-success" onclick="openChartModal('items')"><h6 class="small mb-1 text-muted" data-tr="stat_items">Total Items</h6><h4 class="fw-bold m-0" id="statCount">0</h4></div></div>
+                <div class="col-6"><div class="stat-card border-primary" onclick="openChartModal('value')"><h6 class="small mb-1 text-muted" data-tr="stat_value">Value</h6><h5 class="fw-bold m-0" id="statValue">0</h5></div></div>
+                <div class="col-6"><div class="stat-card border-danger" onclick="openChartModal('expiry')"><h6 class="small mb-1 text-muted" data-tr="stat_exp">Expiry</h6><h4 class="fw-bold m-0 text-danger" id="statExp">0</h4></div></div>
+                <div class="col-6"><div class="stat-card border-warning" onclick="openChartModal('stock')"><h6 class="small mb-1 text-muted" data-tr="stat_low">Shortage</h6><h4 class="fw-bold m-0 text-warning" id="statLow">0</h4></div></div>
             </div>
 
-            <input type="text" id="searchInput" onkeyup="renderList()" class="form-control rounded-pill mb-3" data-placeholder-tr="search_placeholder" placeholder="Search...">
+            <input type="text" id="searchInput" onkeyup="renderList()" class="form-control rounded-pill border-0 shadow-sm mb-3 p-2 px-3" data-placeholder-tr="search_placeholder" placeholder="Search...">
             <div id="inventoryContainer"></div>
         </div>
     </div>
+
+    <div class="modal fade" id="itemModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content rounded-4 border-0"><div class="modal-header border-0"><h5 class="modal-title fw-bold" data-tr="modal_title">Item Details</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-0">
+        <div class="camera-trigger mb-3"><i class="fas fa-camera fa-2x mb-2"></i><br><span data-tr="ocr_text">AI Scan (Camera)</span><input type="file" class="camera-input" accept="image/*" capture="environment" onchange="handleOCR(this)"><div id="ocrLoading" class="text-primary mt-2 small d-none">Reading...</div></div>
+        <input type="hidden" id="editIndex"><div class="form-floating mb-2"><input type="text" class="form-control" id="inpName" placeholder="Name"><label data-tr="lbl_name">Item Name</label></div>
+        <div class="row g-2"><div class="col-6"><div class="form-floating mb-2"><input type="number" class="form-control" id="inpQty" placeholder="Qty"><label data-tr="lbl_qty">Quantity</label></div></div><div class="col-6"><div class="form-floating mb-2"><input type="number" class="form-control" id="inpBuyPrice" placeholder="Buy" oninput="calculateProfit()"><label data-tr="lbl_buy">Buy Price</label></div></div></div>
+        <div class="profit-calculator mb-3"><label class="form-label small fw-bold text-success mb-1"><span data-tr="lbl_profit">Profit:</span> <span id="profitValue">20%</span></label><input type="range" class="form-range" min="1" max="100" value="20" id="profitRange" oninput="calculateProfit()"><div class="form-floating"><input type="number" class="form-control" id="inpPrice" readonly><label data-tr="lbl_sell">Sell Price (Auto)</label></div></div>
+        <div class="form-floating mb-2"><input type="date" class="form-control" id="inpExp"><label data-tr="lbl_exp">Expiry Date</label></div>
+        <div class="form-floating"><input type="text" class="form-control" id="inpActive"><label data-tr="lbl_active">Active Ingredient</label></div>
+    </div><div class="modal-footer border-0"><button onclick="saveItem()" class="btn btn-success w-100 rounded-pill py-2 fw-bold" data-tr="save_btn">Save</button><button onclick="deleteItem()" id="btnDelete" class="btn btn-outline-danger w-100 rounded-pill py-2 d-none" data-tr="del_btn">Delete</button></div></div></div></div>
+
+    <div class="modal fade" id="mergeModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content rounded-4 border-0"><div class="modal-header border-0"><h5 class="modal-title fw-bold" data-tr="merge_title">Data Options</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center"><p id="mergeMessage" class="fw-bold"></p><div class="d-grid gap-2"><button onclick="processMerge('merge')" class="btn btn-outline-primary" data-tr="opt_merge">Merge Quantities</button><button onclick="processMerge('add_new')" class="btn btn-outline-success" data-tr="opt_add">Add as New</button><button onclick="processMerge('replace')" id="replaceBtn" class="btn btn-outline-danger" data-tr="opt_replace">Replace All</button></div></div></div></div></div>
+
+    <div class="modal fade" id="chartModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down"><div class="modal-content rounded-4"><div class="modal-header border-0"><h5 class="modal-title fw-bold" id="chartTitle">Analysis</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center"><h3 class="text-primary fw-bold mb-3" id="chartMainValue"></h3><div style="height: 250px;"><canvas id="theChart"></canvas></div><div id="reportDetails" class="text-start mt-3"><div class="d-flex justify-content-between border-bottom pb-1"><h6 id="reportHeader" class="small fw-bold"></h6><button id="exportReportBtn" class="btn btn-sm btn-success d-none" onclick="exportDetailedReport()"><i class="fas fa-file-excel"></i></button></div><ol id="detailedList" class="list-group list-group-numbered small mt-2"></ol></div></div></div></div></div>
 
     <input type="file" id="restoreFile" style="display:none" onchange="handleRestoreFile(this)" accept=".json">
     <input type="file" id="importExcelFile" style="display:none" onchange="handleImportExcelFile(this)" accept=".xlsx, .xls">
 
     <script>
-        // إعدادات PWA - تسجيل الـ Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js').then(() => console.log("PWA Ready"));
-        }
-
+        // --- 1. الترجمة وإدارة اللغة ---
         const translations = {
             en: {
-                app_title: "Pharmacy Management", app_sub: "Wad Almansi System",
-                login_btn: "Login", login_error: "Incorrect PIN",
-                header_title: "Inventory", add_btn: "Add",
-                backup: "Backup", restore: "Restore", import: "Import Excel", logout: "Logout",
-                usd_rate: "USD Rate (SDG):", search_placeholder: "Search items...",
-                stat_items: "Total Items", stat_value: "Total Value"
+                app_title: "Pharmacy Management", app_sub: "Wad Almansi System", login_btn: "Login", login_error: "Incorrect PIN",
+                header_title: "Inventory", add_btn: "Add", data_mgmt: "Data Management", backup: "Backup", restore: "Restore", import: "Import Excel", logout: "Logout",
+                usd_rate: "USD Rate:", stat_items: "Items", stat_value: "Value", stat_exp: "Expiry", stat_low: "Shortage", search_placeholder: "Search name or active ingredient...",
+                modal_title: "Item Details", ocr_text: "AI Scan (Camera)", lbl_name: "Item Name", lbl_qty: "Quantity", lbl_buy: "Buy Price", lbl_profit: "Profit:", lbl_sell: "Sell Price", lbl_exp: "Expiry Date", lbl_active: "Active Ingredient", save_btn: "Save Data", del_btn: "Delete Item",
+                merge_title: "Merge Options", opt_merge: "Merge (Add Qty)", opt_add: "Add as New", opt_replace: "Replace Current Data"
             },
             ar: {
-                app_title: "إدارة الصيدلية", app_sub: "نظام ود المنسي",
-                login_btn: "دخول", login_error: "الرمز غير صحيح",
-                header_title: "المخزون", add_btn: "إضافة",
-                backup: "نسخة احتياطية", restore: "استعادة", import: "استيراد إكسل", logout: "خروج",
-                usd_rate: "سعر الدولار (SDG):", search_placeholder: "بحث عن صنف...",
-                stat_items: "إجمالي الأصناف", stat_value: "القيمة الإجمالية"
+                app_title: "إدارة الصيدلية", app_sub: "نظام ود المنسي", login_btn: "دخول", login_error: "الرمز غير صحيح",
+                header_title: "المخزون", add_btn: "إضافة", data_mgmt: "إدارة البيانات", backup: "نسخة احتياطية", restore: "استعادة", import: "استيراد إكسل", logout: "خروج",
+                usd_rate: "سعر الدولار:", stat_items: "الأصناف", stat_value: "القيمة", stat_exp: "الانتهاء", stat_low: "النواقص", search_placeholder: "بحث بالاسم أو المادة...",
+                modal_title: "بيانات الصنف", ocr_text: "تصوير بالذكاء الاصطناعي", lbl_name: "اسم الصنف", lbl_qty: "الكمية", lbl_buy: "سعر الشراء", lbl_profit: "الربح:", lbl_sell: "سعر البيع", lbl_exp: "تاريخ الانتهاء", lbl_active: "المادة الفعالة", save_btn: "حفظ البيانات", del_btn: "حذف الصنف",
+                merge_title: "خيارات الدمج", opt_merge: "دمج (زيادة الكمية)", opt_add: "إضافة كجديد", opt_replace: "استبدال البيانات بالكامل"
             }
         };
 
         let currentLang = localStorage.getItem('app_lang') || 'en';
         let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];
+        let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000;
+        let stagedData = null;
+        let chartInstance = null;
 
         function updateLanguageUI() {
             document.querySelectorAll('[data-tr]').forEach(el => el.innerText = translations[currentLang][el.getAttribute('data-tr')]);
             document.querySelectorAll('[data-placeholder-tr]').forEach(el => el.placeholder = translations[currentLang][el.getAttribute('data-placeholder-tr')]);
             document.getElementById('htmlTag').dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('bootstrapLib').href = currentLang === 'ar' ? 
-                "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" : 
-                "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css";
+            document.getElementById('bootstrapLib').href = currentLang === 'ar' ? "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" : "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css";
         }
 
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'ar' : 'en';
-            localStorage.setItem('app_lang', currentLang);
-            updateLanguageUI();
-        }
-
+        function toggleLanguage() { currentLang = currentLang === 'en' ? 'ar' : 'en'; localStorage.setItem('app_lang', currentLang); updateLanguageUI(); }
         function toggleDarkMode() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
             localStorage.setItem('app_theme', isDark ? 'light' : 'dark');
             document.getElementById('themeIcon').className = isDark ? 'fas fa-moon' : 'fas fa-sun';
         }
+
+        // --- 2. المنطق الأساسي للنظام (لا تعديل فيه) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLanguageUI();
+            if(localStorage.getItem('app_theme') === 'dark') toggleDarkMode();
+            document.getElementById('exchangeRateInput').value = exchangeRate;
+        });
 
         function attemptLogin() {
             if(document.getElementById('passInput').value === "123456") {
@@ -194,39 +169,107 @@
             } else { document.getElementById('loginError').classList.remove('d-none'); }
         }
 
-        function refreshUI() {
-            renderList();
-            document.getElementById('statCount').innerText = db.length;
-            const total = db.reduce((a,b) => a + (b.price * b.qty), 0);
-            document.getElementById('statValue').innerText = total.toLocaleString() + " SDG";
-        }
+        function logout() { if(confirm(currentLang === 'ar'?'خروج؟':'Logout?')) location.reload(); }
+        function refreshUI() { renderList(); calculateStats(); }
 
         function renderList() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
             const container = document.getElementById('inventoryContainer');
+            const term = document.getElementById('searchInput').value.toLowerCase();
             container.innerHTML = '';
-            db.filter(i => i.name.toLowerCase().includes(term)).forEach(item => {
-                container.innerHTML += `<div class="item-card shadow-sm">
-                    <div><div class="fw-bold">${item.name}</div><small class="text-muted">${item.exp}</small></div>
-                    <div class="fw-bold text-success">${(item.price * item.qty).toLocaleString()}</div>
-                </div>`;
+            db.filter(i => i.name.toLowerCase().includes(term) || (i.active && i.active.toLowerCase().includes(term))).forEach((item, index) => {
+                const realIdx = db.indexOf(item);
+                const daysLeft = Math.ceil((new Date(item.exp) - new Date()) / (1000*60*60*24));
+                let status = daysLeft < 0 ? '<i class="fas fa-skull text-danger"></i>' : (daysLeft < 90 ? '<i class="fas fa-exclamation text-warning"></i>':'');
+                container.innerHTML += `<div class="item-card" onclick="openEditModal(${realIdx})"><div><div class="fw-bold">${item.name} ${status}</div><small class="text-muted">${item.exp}</small></div><div class="text-end"><span class="badge-qty">${item.qty}</span><div class="small fw-bold text-success mt-1">${(item.price * item.qty).toLocaleString()} SDG</div></div></div>`;
             });
         }
 
-        // استدعاء التهيئة عند التحميل
-        document.addEventListener('DOMContentLoaded', () => {
-            updateLanguageUI();
-            if(localStorage.getItem('app_theme') === 'dark') toggleDarkMode();
-        });
+        function calculateStats() {
+            document.getElementById('statCount').innerText = db.length;
+            const total = db.reduce((a,b) => a + (b.price * b.qty), 0);
+            document.getElementById('statValue').innerText = total > 1000000 ? (total/1000000).toFixed(1)+'M' : (total/1000).toFixed(1)+'K';
+            document.getElementById('statExp').innerText = db.filter(i => new Date(i.exp) <= new Date(Date.now() + 7776000000)).length;
+            document.getElementById('statLow').innerText = db.filter(i => i.qty < 5).length;
+        }
 
-        function logout() { location.reload(); }
+        function updateExchangeRate(v) { exchangeRate = Number(v); localStorage.setItem('wm_exchange_rate', exchangeRate); calculateStats(); }
+        function calculateProfit() {
+            const buy = Number(document.getElementById('inpBuyPrice').value);
+            const prof = Number(document.getElementById('profitRange').value);
+            document.getElementById('profitValue').innerText = prof + '%';
+            document.getElementById('inpPrice').value = buy > 0 ? Math.round(buy + (buy * prof / 100)) : 0;
+        }
+
+        function openAddModal() {
+            document.getElementById('editIndex').value = ''; document.getElementById('inpName').value = ''; document.getElementById('inpQty').value = '';
+            document.getElementById('inpBuyPrice').value = ''; document.getElementById('inpPrice').value = ''; document.getElementById('inpExp').value = '';
+            document.getElementById('inpActive').value = ''; document.getElementById('btnDelete').classList.add('d-none');
+            new bootstrap.Modal(document.getElementById('itemModal')).show();
+        }
+
+        function openEditModal(idx) {
+            const i = db[idx]; document.getElementById('editIndex').value = idx;
+            document.getElementById('inpName').value = i.name; document.getElementById('inpQty').value = i.qty;
+            document.getElementById('inpBuyPrice').value = i.buyPrice || i.price; document.getElementById('inpPrice').value = i.price;
+            document.getElementById('inpExp').value = i.exp; document.getElementById('inpActive').value = i.active || '';
+            document.getElementById('btnDelete').classList.remove('d-none');
+            new bootstrap.Modal(document.getElementById('itemModal')).show();
+        }
+
+        function saveItem() {
+            const idx = document.getElementById('editIndex').value;
+            const item = { name: document.getElementById('inpName').value, qty: Number(document.getElementById('inpQty').value), buyPrice: Number(document.getElementById('inpBuyPrice').value), price: Number(document.getElementById('inpPrice').value), exp: document.getElementById('inpExp').value, active: document.getElementById('inpActive').value };
+            if(!item.name || !item.price) return alert('Data Missing');
+            if(idx === '') db.push(item); else db[idx] = item;
+            localStorage.setItem('wm_db_v23', JSON.stringify(db));
+            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide(); refreshUI();
+        }
+
+        function deleteItem() {
+            const idx = document.getElementById('editIndex').value;
+            if(confirm('Delete?')) { db.splice(idx, 1); localStorage.setItem('wm_db_v23', JSON.stringify(db)); bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide(); refreshUI(); }
+        }
+
+        // --- 3. استيراد وتصدير الإكسل والبيانات (المصلحة) ---
         function backupData() {
             const blob = new Blob([JSON.stringify(db)], {type: "application/json"});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = "backup.json";
-            a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
         }
+
+        function handleRestoreFile(input) {
+            const reader = new FileReader();
+            reader.onload = e => { stagedData = JSON.parse(e.target.result); document.getElementById('mergeMessage').innerText = "JSON Backup Ready"; new bootstrap.Modal(document.getElementById('mergeModal')).show(); };
+            reader.readAsText(input.files[0]);
+        }
+
+        function handleImportExcelFile(input) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet, { header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'] });
+                stagedData = json.map(i => ({ name: i.name, qty: Number(i.qty)||0, price: Number(i.price)||0, buyPrice: Number(i.buyPrice)||0, exp: i.exp ? (isNaN(i.exp)?i.exp:new Date(Math.round((i.exp-25569)*86400*1000)).toISOString().split('T')[0]):'', active: i.active||'' })).filter(i => i.name && i.name !== 'name');
+                document.getElementById('mergeMessage').innerText = `Excel: ${stagedData.length} items found`;
+                new bootstrap.Modal(document.getElementById('mergeModal')).show();
+            };
+            reader.readAsArrayBuffer(input.files[0]);
+        }
+
+        function processMerge(type) {
+            if(type === 'replace') db = stagedData;
+            else if(type === 'merge') stagedData.forEach(ni => { const ex = db.find(e => e.name === ni.name); if(ex) ex.qty += ni.qty; else db.push(ni); });
+            else db = db.concat(stagedData);
+            localStorage.setItem('wm_db_v23', JSON.stringify(db));
+            bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide(); refreshUI();
+        }
+
+        async function handleOCR(input) {
+            document.getElementById('ocrLoading').classList.remove('d-none');
+            try { const res = await Tesseract.recognize(input.files[0], 'eng+ara'); document.getElementById('inpName').value = res.data.text.split('\n')[0]; } catch(e) {}
+            document.getElementById('ocrLoading').classList.add('d-none');
+        }
+
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); }
     </script>
 </body>
 </html>
