@@ -1,156 +1,158 @@
-<!DOCTYPE html>  <html lang="ar" dir="rtl">  
-<head>  
-    <meta charset="UTF-8">  
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
-    <title>إدارة مخزون الصيدلية - v2.3</title>  
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة مخزون الصيدلية - v2.4</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f9b0f">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/883/883407.png">
   
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">  
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>  
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-<style>  
-    :root {  
-        --primary-color: #0f9b0f;  
-        --bg-light: #f4f6f9;  
-        --card-radius: 16px;  
-    }  
+<style>
+    :root {
+        --primary-color: #0f9b0f;
+        --bg-light: #f4f6f9;
+        --card-radius: 16px;
+    }
 
-    body {  
-        background-color: var(--bg-light);  
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
-        overflow-x: hidden;  
-    }  
+    body {
+        background-color: var(--bg-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: hidden;
+    }
 
-    /* --- Login Screen Styling --- */  
-    #loginSection {  
-        position: fixed;  
-        top: 0; left: 0; width: 100%; height: 100vh;  
-        background: linear-gradient(135deg, #0f9b0f, #004d00);  
-        z-index: 9999;  
-        display: flex; /* Default display */  
-        flex-direction: column;  
-        justify-content: center;  
-        align-items: center;  
-    }  
+    /* --- Login Screen Styling --- */
+    #loginSection {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100vh;
+        background: linear-gradient(135deg, #0f9b0f, #004d00);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
 
-    /* --- Header & Navigation --- */  
-    .mobile-header {  
-        background: white;  
-        padding: 10px 15px;  
-        border-radius: 0 0 20px 20px;  
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);  
-        position: sticky;  
-        top: 0;  
-        z-index: 1000;  
-        display: flex;  
-        justify-content: space-between;  
-        align-items: center;  
-    }  
+    /* --- Header & Navigation --- */
+    .mobile-header {
+        background: white;
+        padding: 10px 15px;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-    .btn-tool {  
-        width: 40px; height: 40px;  
-        border-radius: 50%;  
-        border: none;  
-        background: #f8f9fa;  
-        color: #333;  
-        display: flex; align-items: center; justify-content: center;  
-        transition: 0.2s;  
-    }  
-    .btn-tool:active { transform: scale(0.9); background: #e2e6ea; }  
+    .btn-tool {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: #f8f9fa;
+        color: #333;
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.2s;
+    }
+    .btn-tool:active { transform: scale(0.9); background: #e2e6ea; }
 
-    .btn-main-add {  
-        background: var(--primary-color);  
-        color: white;  
-        padding: 8px 20px;  
-        border-radius: 30px;  
-        font-weight: bold;  
-        box-shadow: 0 4px 10px rgba(15, 155, 15, 0.3);  
-        border: none;  
-    }  
+    .btn-main-add {
+        background: var(--primary-color);
+        color: white;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(15, 155, 15, 0.3);
+        border: none;
+    }
 
-    /* --- Stats Grid --- */  
-    .stat-card {  
-        background: white;  
-        border-radius: var(--card-radius);  
-        padding: 15px;  
-        height: 100%;  
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);  
-        border-bottom: 4px solid transparent;  
-        transition: transform 0.2s;  
-        cursor: pointer;  
-    }  
-    .stat-card:active { transform: scale(0.98); }  
-      
-    .border-success { border-bottom-color: #198754 !important; }  
-    .border-primary { border-bottom-color: #0d6efd !important; }  
-    .border-danger  { border-bottom-color: #dc3545 !important; }  
-    .border-warning { border-bottom-color: #ffc107 !important; }  
+    /* --- Stats Grid --- */
+    .stat-card {
+        background: white;
+        border-radius: var(--card-radius);
+        padding: 15px;
+        height: 100%;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        border-bottom: 4px solid transparent;
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .stat-card:active { transform: scale(0.98); }
+    
+    .border-success { border-bottom-color: #198754 !important; }
+    .border-primary { border-bottom-color: #0d6efd !important; }
+    .border-danger  { border-bottom-color: #dc3545 !important; }
+    .border-warning { border-bottom-color: #ffc107 !important; }
 
-    /* --- Inventory List --- */  
-    .item-card {  
-        background: white;  
-        border-radius: 12px;  
-        margin-bottom: 10px;  
-        padding: 12px;  
-        display: flex;  
-        justify-content: space-between;  
-        align-items: center;  
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);  
-    }  
-    .badge-qty {  
-        background: #e9ecef; color: #333;  
-        padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;  
-    }  
+    /* --- Inventory List --- */
+    .item-card {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        padding: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .badge-qty {
+        background: #e9ecef; color: #333;
+        padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;
+    }
 
-    /* --- AI Camera --- */  
-    .camera-trigger {  
-        border: 2px dashed #0d6efd;  
-        background: #f8f9fa;  
-        color: #0d6efd;  
-        padding: 20px;  
-        text-align: center;  
-        border-radius: 12px;  
-        position: relative;  
-    }  
-    .camera-input {  
-        position: absolute; top:0; left:0; width:100%; height:100%; opacity:0;  
-    }  
+    /* --- AI Camera --- */
+    .camera-trigger {
+        border: 2px dashed #0d6efd;
+        background: #f8f9fa;
+        color: #0d6efd;
+        padding: 20px;
+        text-align: center;
+        border-radius: 12px;
+        position: relative;
+    }
+    .camera-input {
+        position: absolute; top:0; left:0; width:100%; height:100%; opacity:0;
+    }
 
-    /* Helper Utility to hide/show */  
-    .d-none-custom { display: none !important; }  
-      
-    /* New Styles for Exchange Rate and Profit */  
-    #exchangeRateContainer {  
-        background: white;  
-        padding: 10px;  
-        border-radius: 10px;  
-        margin-bottom: 10px;  
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);  
-    }  
-      
-    .profit-calculator {  
-        padding: 10px;  
-        border-radius: 8px;  
-        background: #f0fdf4; /* Light green background */  
-    }  
-      
-    /* New Styles for buttons in merge modal */  
-    #mergeOptions {  
-        display: flex;  
-        flex-direction: column;  
-        gap: 10px;  
-    }  
+    /* Helper Utility to hide/show */
+    .d-none-custom { display: none !important; }
+    
+    /* New Styles for Exchange Rate and Profit */
+    #exchangeRateContainer {
+        background: white;
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .profit-calculator {
+        padding: 10px;
+        border-radius: 8px;
+        background: #f0fdf4;
+    }
+    
+    /* New Styles for buttons in merge modal */
+    #mergeOptions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-    /* --- [ADD-ON] Dark Mode & Language Add-on CSS --- */  
-    #addon-controls {  
-        position: fixed; bottom: 20px; left: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;  
-    }  
+    /* --- Dark Mode & Language Add-on CSS --- */
+    #addon-controls {
+        position: fixed; bottom: 20px; left: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px;
+    }
     html[dir="ltr"] #addon-controls { left: auto; right: 20px; }
     .btn-addon { width: 45px; height: 45px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); cursor: pointer; }
     .btn-dark-toggle { background: #343a40; }
@@ -163,213 +165,265 @@
     body.dark-mode .text-muted { color: #aaa !important; }
     body.dark-mode .profit-calculator { background: #0d2b15; }
 </style>
+</head>
+<body>
+<div id="loginSection">
+    <div class="card p-4 text-center rounded-4 shadow" style="width: 90%; max-width: 320px;">
+        <div class="mb-3 text-success"><i class="fas fa-mortar-pestle fa-3x"></i></div>
+        <h4 class="fw-bold mb-1">إدارة مخزون الصيدلية</h4>
+        <small class="text-muted mb-4">نظام ود المنسي</small>
+        
+        <input type="password" id="passInput" class="form-control text-center rounded-pill mb-3" placeholder="أدخل الرمز السري">
+        <button onclick="attemptLogin()" class="btn btn-success w-100 rounded-pill fw-bold">تسجيل الدخول</button>
+        <p id="loginError" class="text-danger mt-2 small d-none">كلمة المرور غير صحيحة</p>
+    </div>
+</div>
 
-</head>  
-<body>  <div id="loginSection">  
-    <div class="card p-4 text-center rounded-4 shadow" style="width: 90%; max-width: 320px;">  
-        <div class="mb-3 text-success"><i class="fas fa-mortar-pestle fa-3x"></i></div>  
-        <h4 class="fw-bold mb-1">إدارة مخزون الصيدلية</h4>  
-        <small class="text-muted mb-4">نظام ود المنسي</small>  
-          
-        <input type="password" id="passInput" class="form-control text-center rounded-pill mb-3" placeholder="أدخل الرمز السري">  
-        <button onclick="attemptLogin()" class="btn btn-success w-100 rounded-pill fw-bold">تسجيل الدخول</button>  
-        <p id="loginError" class="text-danger mt-2 small d-none">كلمة المرور غير صحيحة</p>  
-    </div>  
-</div>  
+<div id="mainDashboard" class="d-none-custom">
+    
+    <div class="mobile-header">
+        <div class="dropdown">
+            <button class="btn-tool" data-bs-toggle="dropdown">
+                <i class="fas fa-cog"></i>
+            </button>
+            <ul class="dropdown-menu shadow border-0 rounded-3">
+                <li><h6 class="dropdown-header">إدارة البيانات</h6></li>
+                <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> نسخ احتياطي</a></li>
+                <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> استعادة</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="document.getElementById('importExcelFile').click()"><i class="fas fa-file-excel text-success"></i> إضافة بيانات من Excel</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="openScanInvoiceModal()"><i class="fas fa-file-invoice text-info"></i> مسح الفاتورة</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</a></li>
+            </ul>
+            <input type="file" id="restoreFile" style="display:none" onchange="handleRestoreFile(this)" accept=".json">
+            <input type="file" id="importExcelFile" style="display:none" onchange="handleImportExcelFile(this)" accept=".xlsx, .xls">
+        </div>
 
-<div id="mainDashboard" class="d-none-custom">  
-      
-    <div class="mobile-header">  
-        <div class="dropdown">  
-            <button class="btn-tool" data-bs-toggle="dropdown">  
-                <i class="fas fa-cog"></i>  
-            </button>  
-            <ul class="dropdown-menu shadow border-0 rounded-3">  
-                <li><h6 class="dropdown-header">إدارة البيانات</h6></li>  
-                <li><a class="dropdown-item" href="#" onclick="backupData()"><i class="fas fa-download text-success"></i> نسخ احتياطي</a></li>  
-                <li><a class="dropdown-item" href="#" onclick="document.getElementById('restoreFile').click()"><i class="fas fa-upload text-primary"></i> استعادة</a></li>  
-                <li><hr class="dropdown-divider"></li>  
-                <li><a class="dropdown-item" href="#" onclick="document.getElementById('importExcelFile').click()"><i class="fas fa-file-excel text-success"></i> إضافة بيانات من Excel</a></li>  
-                <li><hr class="dropdown-divider"></li>  
-                <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</a></li>  
-            </ul>  
-            <input type="file" id="restoreFile" style="display:none" onchange="handleRestoreFile(this)" accept=".json">  
-            <input type="file" id="importExcelFile" style="display:none" onchange="handleImportExcelFile(this)" accept=".xlsx, .xls">  
-        </div>  
+        <h5 class="m-0 fw-bold text-success">إدارة مخزون الصيدلية</h5>
 
-        <h5 class="m-0 fw-bold text-success">إدارة مخزون الصيدلية</h5>  
+        <button onclick="openAddModal()" class="btn-main-add">
+            <i class="fas fa-plus"></i> إضافة
+        </button>
+    </div>
 
-        <button onclick="openAddModal()" class="btn-main-add">  
-            <i class="fas fa-plus"></i> إضافة  
-        </button>  
-    </div>  
+    <div class="container-fluid p-3 pb-5">
+        
+        <div id="exchangeRateContainer" class="d-flex align-items-center justify-content-between">
+            <label for="exchangeRateInput" class="small fw-bold m-0 text-muted"><i class="fas fa-dollar-sign text-success"></i> سعر الدولار (SDG):</label>
+            <input type="number" id="exchangeRateInput" onchange="updateExchangeRate(this.value)" class="form-control form-control-sm text-center" style="width: 100px;">
+        </div>
 
-    <div class="container-fluid p-3 pb-5">  
-          
-        <div id="exchangeRateContainer" class="d-flex align-items-center justify-content-between">  
-            <label for="exchangeRateInput" class="small fw-bold m-0 text-muted"><i class="fas fa-dollar-sign text-success"></i> سعر الدولار (SDG):</label>  
-            <input type="number" id="exchangeRateInput" onchange="updateExchangeRate(this.value)" class="form-control form-control-sm text-center" style="width: 100px;">  
-        </div>  
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="stat-card border-success" onclick="openChartModal('items')">
+                    <i class="fas fa-pills text-success fa-2x mb-2 opacity-50"></i>
+                    <h6 class="text-muted small mb-1">إجمالي الأصناف</h6>
+                    <h4 class="fw-bold m-0" id="statCount">0</h4>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card border-primary" onclick="openChartModal('value')">
+                    <i class="fas fa-coins text-primary fa-2x mb-2 opacity-50"></i>
+                    <h6 class="text-muted small mb-1">القيمة الإجمالية</h6>
+                    <h5 class="fw-bold m-0" id="statValue">0</h5>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card border-danger" onclick="openChartModal('expiry')">
+                    <i class="fas fa-hourglass-half text-danger fa-2x mb-2 opacity-50"></i>
+                    <h6 class="text-muted small mb-1">سينتهي قريباً</h6>
+                    <h4 class="fw-bold m-0 text-danger" id="statExp">0</h4>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-card border-warning" onclick="openChartModal('stock')">
+                    <i class="fas fa-battery-quarter text-warning fa-2x mb-2 opacity-50"></i>
+                    <h6 class="text-muted small mb-1">النواقص</h6>
+                    <h4 class="fw-bold m-0 text-warning" id="statLow">0</h4>
+                </div>
+            </div>
+        </div>
 
-        <div class="row g-2 mb-3">  
-            <div class="col-6">  
-                <div class="stat-card border-success" onclick="openChartModal('items')">  
-                    <i class="fas fa-pills text-success fa-2x mb-2 opacity-50"></i>  
-                    <h6 class="text-muted small mb-1">إجمالي الأصناف</h6>  
-                    <h4 class="fw-bold m-0" id="statCount">0</h4>  
-                </div>  
-            </div>  
-            <div class="col-6">  
-                <div class="stat-card border-primary" onclick="openChartModal('value')">  
-                    <i class="fas fa-coins text-primary fa-2x mb-2 opacity-50"></i>  
-                    <h6 class="text-muted small mb-1">القيمة الإجمالية</h6>  
-                    <h5 class="fw-bold m-0" id="statValue">0</h5>  
-                </div>  
-            </div>  
-            <div class="col-6">  
-                <div class="stat-card border-danger" onclick="openChartModal('expiry')">  
-                    <i class="fas fa-hourglass-half text-danger fa-2x mb-2 opacity-50"></i>  
-                    <h6 class="text-muted small mb-1">سينتهي قريباً</h6>  
-                    <h4 class="fw-bold m-0 text-danger" id="statExp">0</h4>  
-                </div>  
-            </div>  
-            <div class="col-6">  
-                <div class="stat-card border-warning" onclick="openChartModal('stock')">  
-                    <i class="fas fa-battery-quarter text-warning fa-2x mb-2 opacity-50"></i>  
-                    <h6 class="text-muted small mb-1">النواقص</h6>  
-                    <h4 class="fw-bold m-0 text-warning" id="statLow">0</h4>  
-                </div>  
-            </div>  
-        </div>  
+        <div class="input-group shadow-sm rounded-4 overflow-hidden bg-white mb-3">
+            <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" id="searchInput" onkeyup="renderList()" class="form-control border-0 p-2" placeholder="بحث بالاسم أو المادة الفعالة...">
+        </div>
 
-        <div class="input-group shadow-sm rounded-4 overflow-hidden bg-white mb-3">  
-            <span class="input-group-text bg-white border-0 ps-3"><i class="fas fa-search text-muted"></i></span>  
-            <input type="text" id="searchInput" onkeyup="renderList()" class="form-control border-0 p-2" placeholder="بحث بالاسم أو المادة الفعالة...">  
-        </div>  
+        <div id="inventoryContainer"></div>
+    </div>
+</div>
 
-        <div id="inventoryContainer"></div>  
-    </div>  
-</div>  
+<div class="modal fade" id="itemModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">بيانات الدواء</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="camera-trigger mb-3">
+                    <i class="fas fa-camera fa-2x mb-2"></i><br>
+                    <span>اضغط لتصوير العلبة (AI)</span>
+                    <input type="file" class="camera-input" accept="image/*" capture="environment" onchange="handleOCR(this)">
+                    <div id="ocrLoading" class="text-primary mt-2 small d-none">جاري قراءة البيانات...</div>
+                </div>
 
-<div class="modal fade" id="itemModal" tabindex="-1">  
-    <div class="modal-dialog modal-dialog-centered modal-lg">  
-        <div class="modal-content rounded-4 border-0">  
-            <div class="modal-header border-0">  
-                <h5 class="modal-title fw-bold">بيانات الدواء</h5>  
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>  
-            </div>  
-            <div class="modal-body pt-0">  
-                <div class="camera-trigger mb-3">  
-                    <i class="fas fa-camera fa-2x mb-2"></i><br>  
-                    <span>اضغط لتصوير العلبة (AI)</span>  
-                    <input type="file" class="camera-input" accept="image/*" capture="environment" onchange="handleOCR(this)">  
-                    <div id="ocrLoading" class="text-primary mt-2 small d-none">جاري قراءة البيانات...</div>  
-                </div>  
+                <input type="hidden" id="editIndex">
+                <div class="form-floating mb-2">
+                    <input type="text" class="form-control" id="inpName" placeholder="الاسم">
+                    <label>اسم الدواء</label>
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="form-floating mb-2">
+                            <input type="number" class="form-control" id="inpQty" placeholder="الكمية">
+                            <label>الكمية</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-floating mb-2">
+                            <input type="number" class="form-control" id="inpBuyPrice" placeholder="الشراء" oninput="calculateProfit()">
+                            <label>سعر الشراء</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profit-calculator mb-3">
+                    <label for="profitRange" class="form-label small fw-bold text-success mb-1">
+                        نسبة الربح: <span id="profitValue">20%</span>
+                    </label>
+                    <input type="range" class="form-range" min="1" max="100" value="20" id="profitRange" oninput="calculateProfit()">
+                    <div class="form-floating">
+                        <input type="number" class="form-control bg-white" id="inpPrice" placeholder="البيع" readonly>
+                        <label>سعر البيع (محسوب)</label>
+                    </div>
+                </div>
+                
+                <div class="form-floating mb-2">
+                    <input type="date" class="form-control" id="inpExp" placeholder="التاريخ">
+                    <label>تاريخ الانتهاء</label>
+                </div>
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="inpActive" placeholder="المادة">
+                    <label>المادة الفعالة (اختياري)</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button onclick="saveItem()" class="btn btn-success w-100 rounded-pill py-2 fw-bold">حفظ البيانات</button>
+                <button onclick="deleteItem()" id="btnDelete" class="btn btn-outline-danger w-100 rounded-pill py-2 d-none">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <input type="hidden" id="editIndex">  
-                <div class="form-floating mb-2">  
-                    <input type="text" class="form-control" id="inpName" placeholder="الاسم">  
-                    <label>اسم الدواء</label>  
-                </div>  
-                  
-                <div class="row g-2">  
-                    <div class="col-6">  
-                        <div class="form-floating mb-2">  
-                            <input type="number" class="form-control" id="inpQty" placeholder="الكمية">  
-                            <label>الكمية</label>  
-                        </div>  
-                    </div>  
-                    <div class="col-6">  
-                        <div class="form-floating mb-2">  
-                            <input type="number" class="form-control" id="inpBuyPrice" placeholder="الشراء" oninput="calculateProfit()">  
-                            <label>سعر الشراء</label>  
-                        </div>  
-                    </div>  
-                </div>  
-                  
-                <div class="profit-calculator mb-3">  
-                    <label for="profitRange" class="form-label small fw-bold text-success mb-1">  
-                        نسبة الربح: <span id="profitValue">20%</span>  
-                    </label>  
-                    <input type="range" class="form-range" min="1" max="100" value="20" id="profitRange" oninput="calculateProfit()">  
-                    <div class="form-floating">  
-                        <input type="number" class="form-control bg-white" id="inpPrice" placeholder="البيع" readonly>  
-                        <label>سعر البيع (محسوب)</label>  
-                    </div>  
-                </div>  
-                  
-                <div class="form-floating mb-2">  
-                    <input type="date" class="form-control" id="inpExp" placeholder="التاريخ">  
-                    <label>تاريخ الانتهاء</label>  
-                </div>  
-                <div class="form-floating">  
-                    <input type="text" class="form-control" id="inpActive" placeholder="المادة">  
-                    <label>المادة الفعالة (اختياري)</label>  
-                </div>  
-            </div>  
-            <div class="modal-footer border-0">  
-                <button onclick="saveItem()" class="btn btn-success w-100 rounded-pill py-2 fw-bold">حفظ البيانات</button>  
-                <button onclick="deleteItem()" id="btnDelete" class="btn btn-outline-danger w-100 rounded-pill py-2 d-none">حذف</button>  
-            </div>  
-        </div>  
-    </div>  
-</div>  
-  
-<div class="modal fade" id="mergeModal" tabindex="-1">  
-    <div class="modal-dialog modal-dialog-centered">  
-        <div class="modal-content rounded-4 border-0">  
-            <div class="modal-header border-0">  
-                <h5 class="modal-title fw-bold">خيارات دمج البيانات</h5>  
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>  
-            </div>  
-            <div class="modal-body">  
-                <p id="mergeMessage" class="lead text-center fw-bold"></p>  
-                <p class="text-muted small text-center">يرجى اختيار طريقة دمج الملف المستورد مع بياناتك الحالية:</p>  
-                <div id="mergeOptions">  
-                    <button onclick="processMerge('merge')" class="btn btn-outline-primary w-100">  
-                        <i class="fas fa-code-branch"></i> دمج (Merge): دمج الكميات وتحديث البقية  
-                    </button>  
-                    <button onclick="processMerge('add_new')" class="btn btn-outline-success w-100">  
-                        <i class="fas fa-plus-circle"></i> إضافة كأصناف جديدة  
-                    </button>  
-                    <button onclick="processMerge('replace')" id="replaceBtn" class="btn btn-outline-danger w-100">  
-                        <i class="fas fa-trash-alt"></i> استبدال (Replace): حذف كل البيانات الحالية واستبدالها  
-                    </button>  
-                </div>  
-                <small class="text-danger mt-3 d-block text-center">**تنبيه: زر الاستبدال سيحذف كل بياناتك الحالية.**</small>  
-            </div>  
-        </div>  
-    </div>  
-</div>  
+<div class="modal fade" id="mergeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">خيارات دمج البيانات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mergeMessage" class="lead text-center fw-bold"></p>
+                <p class="text-muted small text-center">يرجى اختيار طريقة دمج الملف المستورد مع بياناتك الحالية:</p>
+                <div id="mergeOptions">
+                    <button onclick="processMerge('merge')" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-code-branch"></i> دمج (Merge): دمج الكميات وتحديث البقية
+                    </button>
+                    <button onclick="processMerge('add_new')" class="btn btn-outline-success w-100">
+                        <i class="fas fa-plus-circle"></i> إضافة كأصناف جديدة
+                    </button>
+                    <button onclick="processMerge('replace')" id="replaceBtn" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-trash-alt"></i> استبدال (Replace): حذف كل البيانات الحالية واستبدالها
+                    </button>
+                </div>
+                <small class="text-danger mt-3 d-block text-center">**تنبيه: زر الاستبدال سيحذف كل بياناتك الحالية.**</small>
+            </div>
+        </div>
+    </div>
+</div>
 
-<div class="modal fade" id="chartModal" tabindex="-1">  
-    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">  
-        <div class="modal-content rounded-4">  
-            <div class="modal-header border-0">  
-                <h5 class="modal-title fw-bold" id="chartTitle">تحليل</h5>  
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>  
-            </div>  
-            <div class="modal-body text-center">  
-                <h3 class="text-primary fw-bold mb-3" id="chartMainValue"></h3>  
-                  
-                <div style="height: 250px; margin-bottom: 20px;">  
-                    <canvas id="theChart"></canvas>  
-                </div>  
-                  
-                <div id="reportDetails" class="text-start">  
-                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">  
-                        <h6 class="text-muted fw-bold m-0" id="reportHeader"></h6>  
-                        <button id="exportReportBtn" class="btn btn-sm btn-success d-none" onclick="exportDetailedReport()" title="تصدير للموقع">  
-                            <i class="fas fa-file-excel"></i> تصدير Excel  
-                        </button>  
-                    </div>  
-                    <ol id="detailedList" class="list-group list-group-numbered small"></ol>  
-                    <p class="mt-3 small text-muted" id="reportFooter"></p>  
-                </div>  
-            </div>  
-        </div>  
-    </div>  
-</div>  
+<div class="modal fade" id="scanInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">مسح الفاتورة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="camera-trigger mb-3">
+                    <i class="fas fa-camera fa-2x mb-2"></i><br>
+                    <span>اضغط لتصوير الفاتورة (AI)</span>
+                    <input type="file" class="camera-input" accept="image/*, .pdf" onchange="handleInvoiceScan(this)">
+                    <div id="invoiceLoading" class="text-primary mt-2 small d-none">جاري قراءة الفاتورة...</div>
+                </div>
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="invoiceNumber" placeholder="رقم الفاتورة">
+                            <label>رقم الفاتورة</label>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-floating">
+                            <input type="date" class="form-control" id="invoiceDate" placeholder="تاريخ الفاتورة">
+                            <label>تاريخ الفاتورة</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="supplierName" placeholder="اسم المورد">
+                    <label>اسم المورد (اختياري)</label>
+                </div>
+                
+                <div class="alert alert-info small">
+                    <i class="fas fa-info-circle"></i> سيقوم النظام بمحاولة استخراج الأدوية من الفاتورة تلقائياً
+                </div>
+                
+                <div id="extractedItems" class="mt-3">
+                    <!-- سيتم عرض العناصر المستخرجة هنا -->
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button onclick="processInvoice()" class="btn btn-success w-100 rounded-pill py-2 fw-bold">إضافة الفاتورة للمخزون</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="chartModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold" id="chartTitle">تحليل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h3 class="text-primary fw-bold mb-3" id="chartMainValue"></h3>
+                
+                <div style="height: 250px; margin-bottom: 20px;">
+                    <canvas id="theChart"></canvas>
+                </div>
+                
+                <div id="reportDetails" class="text-start">
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
+                        <h6 class="text-muted fw-bold m-0" id="reportHeader"></h6>
+                        <button id="exportReportBtn" class="btn btn-sm btn-success d-none" onclick="exportDetailedReport()" title="تصدير للموقع">
+                            <i class="fas fa-file-excel"></i> تصدير Excel
+                        </button>
+                    </div>
+                    <ol id="detailedList" class="list-group list-group-numbered small"></ol>
+                    <p class="mt-3 small text-muted" id="reportFooter"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="addon-controls">
     <button class="btn-addon btn-dark-toggle" onclick="addon_toggleDark()">
@@ -380,512 +434,753 @@
     </button>
 </div>
 
-<script>  
-    // --- 1. System Setup ---  
-    const SYS_PASS = "123456";  
-    let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];  
-    let chartInstance = null;  
-    let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000; // سعر الصرف الافتراضي  
-    let stagedData = null; // لتخزين البيانات مؤقتا قبل الدمج  
-    let mergeContext = ''; // لتحديد سياق الدمج (JSON/Excel)  
+<script>
+    // --- 1. System Setup ---
+    const SYS_PASS = "123456";
+    let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];
+    let chartInstance = null;
+    let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000;
+    let stagedData = null;
+    let mergeContext = '';
+    let extractedInvoiceItems = null;
 
-    // تحميل سعر الصرف عند بدء التشغيل  
-    document.addEventListener('DOMContentLoaded', () => {  
-        document.getElementById('exchangeRateInput').value = exchangeRate;  
-        refreshUI();  
-    });  
+    // تحميل سعر الصرف عند بدء التشغيل
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('exchangeRateInput').value = exchangeRate;
+        refreshUI();
+        addon_init();
+    });
 
-    // --- 2. Authentication Logic ---  
-    function attemptLogin() {  
-        const pass = document.getElementById('passInput').value;  
-        if(pass === SYS_PASS) {  
-            // Hide Login, Show Dashboard strictly  
-            document.getElementById('loginSection').classList.add('d-none-custom');  
-            document.getElementById('mainDashboard').classList.remove('d-none-custom');  
-            refreshUI();  
-        } else {  
-            document.getElementById('loginError').classList.remove('d-none');  
-        }  
-    }  
+    // --- 2. Authentication Logic ---
+    function attemptLogin() {
+        const pass = document.getElementById('passInput').value;
+        if(pass === SYS_PASS) {
+            document.getElementById('loginSection').classList.add('d-none-custom');
+            document.getElementById('mainDashboard').classList.remove('d-none-custom');
+            refreshUI();
+        } else {
+            document.getElementById('loginError').classList.remove('d-none');
+        }
+    }
 
-    function logout() {  
-        if(confirm('تأكيد الخروج؟')) location.reload();  
-    }  
+    function logout() {
+        if(confirm('تأكيد الخروج؟')) location.reload();
+    }
 
-    // --- 3. Core UI Functions ---  
-    function refreshUI() {  
-        renderList();  
-        calculateStats();  
-    }  
+    // --- 3. Core UI Functions ---
+    function refreshUI() {
+        renderList();
+        calculateStats();
+    }
 
-    // تحديث سعر الصرف وحفظه  
-    function updateExchangeRate(value) {  
-        exchangeRate = Number(value);  
-        localStorage.setItem('wm_exchange_rate', exchangeRate);  
-        calculateStats(); // إعادة حساب القيم المالية  
-    }  
+    function updateExchangeRate(value) {
+        exchangeRate = Number(value);
+        localStorage.setItem('wm_exchange_rate', exchangeRate);
+        calculateStats();
+    }
 
-    function renderList() {  
-        const container = document.getElementById('inventoryContainer');  
-        const term = document.getElementById('searchInput').value.toLowerCase();  
-          
-        container.innerHTML = '';  
-          
-        const filtered = db.filter(item =>   
-            item.name.toLowerCase().includes(term) ||   
-            (item.active && item.active.toLowerCase().includes(term))  
-        );  
+    function renderList() {
+        const container = document.getElementById('inventoryContainer');
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        
+        container.innerHTML = '';
+        
+        const filtered = db.filter(item => 
+            item.name.toLowerCase().includes(term) || 
+            (item.active && item.active.toLowerCase().includes(term))
+        );
 
-        filtered.forEach((item, index) => {  
-            const realIndex = db.indexOf(item);  
-            const daysLeft = Math.ceil((new Date(item.exp) - new Date()) / (1000*60*60*24));  
-            let statusIcon = '';  
-            if(daysLeft < 0) statusIcon = '<i class="fas fa-skull text-danger" title="منتهي"></i>';  
-            else if(daysLeft < 90) statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="قريب"></i>';  
+        filtered.forEach((item, index) => {
+            const realIndex = db.indexOf(item);
+            const daysLeft = Math.ceil((new Date(item.exp) - new Date()) / (1000*60*60*24));
+            let statusIcon = '';
+            if(daysLeft < 0) statusIcon = '<i class="fas fa-skull text-danger" title="منتهي"></i>';
+            else if(daysLeft < 90) statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="قريب"></i>';
 
-            container.innerHTML += `  
-                <div class="item-card" onclick="openEditModal(${realIndex})">  
-                    <div>  
-                        <div class="fw-bold text-dark">${item.name} ${statusIcon}</div>  
-                        <small class="text-muted">ينتهي: ${item.exp}</small>  
-                    </div>  
-                    <div class="text-end">  
-                        <span class="badge-qty">${item.qty}</span>  
-                        <div class="small fw-bold text-success mt-1">${(item.price * item.qty).toLocaleString()} SDG</div>  
-                    </div>  
-                </div>  
-            `;  
-        });  
-    }  
+            container.innerHTML += `
+                <div class="item-card" onclick="openEditModal(${realIndex})">
+                    <div>
+                        <div class="fw-bold text-dark">${item.name} ${statusIcon}</div>
+                        <small class="text-muted">ينتهي: ${item.exp}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge-qty">${item.qty}</span>
+                        <div class="small fw-bold text-success mt-1">${(item.price * item.qty).toLocaleString()} SDG</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
 
-    function calculateStats() {  
-        // Count  
-        document.getElementById('statCount').innerText = db.length;  
-          
-        // Value  
-        const totalValSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);  
-        document.getElementById('statValue').innerText = formatMoney(totalValSDG);  
-          
-        // Expiry (90 days)  
-        const today = new Date();  
-        const warningDate = new Date(); warningDate.setDate(today.getDate() + 90);  
-        const dangerCount = db.filter(i => new Date(i.exp) <= warningDate).length;  
-        document.getElementById('statExp').innerText = dangerCount;  
-          
-        // Low Stock  
-        document.getElementById('statLow').innerText = db.filter(i => i.qty < 5).length;  
-    }  
+    function calculateStats() {
+        document.getElementById('statCount').innerText = db.length;
+        
+        const totalValSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);
+        document.getElementById('statValue').innerText = formatMoney(totalValSDG);
+        
+        const today = new Date();
+        const warningDate = new Date(); warningDate.setDate(today.getDate() + 90);
+        const dangerCount = db.filter(i => new Date(i.exp) <= warningDate).length;
+        document.getElementById('statExp').innerText = dangerCount;
+        
+        document.getElementById('statLow').innerText = db.filter(i => i.qty < 5).length;
+    }
 
-    function formatMoney(num) {  
-        if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';  
-        if(num >= 1000) return (num/1000).toFixed(1) + 'K';  
-        return num;  
-    }  
+    function formatMoney(num) {
+        if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
+        if(num >= 1000) return (num/1000).toFixed(1) + 'K';
+        return num;
+    }
 
-    // --- 4. Profit Calculation ---  
-    function calculateProfit() {  
-        const buyPrice = Number(document.getElementById('inpBuyPrice').value);  
-        const profitPercentage = Number(document.getElementById('profitRange').value);  
-          
-        document.getElementById('profitValue').innerText = profitPercentage + '%';  
+    // --- 4. Profit Calculation ---
+    function calculateProfit() {
+        const buyPrice = Number(document.getElementById('inpBuyPrice').value);
+        const profitPercentage = Number(document.getElementById('profitRange').value);
+        
+        document.getElementById('profitValue').innerText = profitPercentage + '%';
 
-        if(buyPrice > 0) {  
-            const sellPrice = buyPrice + (buyPrice * profitPercentage / 100);  
-            document.getElementById('inpPrice').value = Math.round(sellPrice);  
-        } else {  
-            document.getElementById('inpPrice').value = 0;  
-        }  
-    }  
+        if(buyPrice > 0) {
+            const sellPrice = buyPrice + (buyPrice * profitPercentage / 100);
+            document.getElementById('inpPrice').value = Math.round(sellPrice);
+        } else {
+            document.getElementById('inpPrice').value = 0;
+        }
+    }
 
-    // --- 5. CRUD Operations ---  
-    function openAddModal() {  
-        document.getElementById('editIndex').value = '';  
-        document.getElementById('inpName').value = '';  
-        document.getElementById('inpQty').value = '';  
-        document.getElementById('inpBuyPrice').value = ''; // حقل الشراء الجديد  
-        document.getElementById('inpPrice').value = '';  
-        document.getElementById('inpExp').value = '';  
-        document.getElementById('inpActive').value = '';  
-        document.getElementById('profitRange').value = 20; // إعادة تعيين الربح  
-        document.getElementById('profitValue').innerText = '20%';  
-        document.getElementById('btnDelete').classList.add('d-none');  
-        new bootstrap.Modal(document.getElementById('itemModal')).show();  
-    }  
+    // --- 5. CRUD Operations ---
+    function openAddModal() {
+        document.getElementById('editIndex').value = '';
+        document.getElementById('inpName').value = '';
+        document.getElementById('inpQty').value = '';
+        document.getElementById('inpBuyPrice').value = '';
+        document.getElementById('inpPrice').value = '';
+        document.getElementById('inpExp').value = '';
+        document.getElementById('inpActive').value = '';
+        document.getElementById('profitRange').value = 20;
+        document.getElementById('profitValue').innerText = '20%';
+        document.getElementById('btnDelete').classList.add('d-none');
+        new bootstrap.Modal(document.getElementById('itemModal')).show();
+    }
 
-    function openEditModal(index) {  
-        const item = db[index];  
-        document.getElementById('editIndex').value = index;  
-        document.getElementById('inpName').value = item.name;  
-        document.getElementById('inpQty').value = item.qty;  
-        document.getElementById('inpBuyPrice').value = item.buyPrice || item.price; // استخدم سعر الشراء الجديد  
-        document.getElementById('inpPrice').value = item.price; // هذا يمثل سعر البيع الآن  
-        document.getElementById('inpExp').value = item.exp;  
-        document.getElementById('inpActive').value = item.active || '';  
-          
-        // حساب نسبة الربح التقريبية لعرضها في السلايدر (إذا كانت البيانات موجودة)  
-        const calculatedProfit = item.buyPrice > 0 ? ((item.price / item.buyPrice) - 1) * 100 : 20;  
-        document.getElementById('profitRange').value = Math.min(100, Math.max(1, Math.round(calculatedProfit)));  
-        calculateProfit();   
-          
-        document.getElementById('btnDelete').classList.remove('d-none');  
-        new bootstrap.Modal(document.getElementById('itemModal')).show();  
-    }  
+    function openEditModal(index) {
+        const item = db[index];
+        document.getElementById('editIndex').value = index;
+        document.getElementById('inpName').value = item.name;
+        document.getElementById('inpQty').value = item.qty;
+        document.getElementById('inpBuyPrice').value = item.buyPrice || item.price;
+        document.getElementById('inpPrice').value = item.price;
+        document.getElementById('inpExp').value = item.exp;
+        document.getElementById('inpActive').value = item.active || '';
+        
+        const calculatedProfit = item.buyPrice > 0 ? ((item.price / item.buyPrice) - 1) * 100 : 20;
+        document.getElementById('profitRange').value = Math.min(100, Math.max(1, Math.round(calculatedProfit)));
+        calculateProfit();
+        
+        document.getElementById('btnDelete').classList.remove('d-none');
+        new bootstrap.Modal(document.getElementById('itemModal')).show();
+    }
 
-    function saveItem() {  
-        const idx = document.getElementById('editIndex').value;  
-        const buyPrice = Number(document.getElementById('inpBuyPrice').value);  
-        const sellPrice = Number(document.getElementById('inpPrice').value);  
+    function saveItem() {
+        const idx = document.getElementById('editIndex').value;
+        const buyPrice = Number(document.getElementById('inpBuyPrice').value);
+        const sellPrice = Number(document.getElementById('inpPrice').value);
 
-        const newItem = {  
-            name: document.getElementById('inpName').value,  
-            qty: Number(document.getElementById('inpQty').value),  
-            // تم تعديل حفظ البيانات ليدعم سعر الشراء والبيع  
-            buyPrice: buyPrice,  
-            price: sellPrice, // price now means SELL price  
-            exp: document.getElementById('inpExp').value,  
-            active: document.getElementById('inpActive').value  
-        };  
+        const newItem = {
+            name: document.getElementById('inpName').value,
+            qty: Number(document.getElementById('inpQty').value),
+            buyPrice: buyPrice,
+            price: sellPrice,
+            exp: document.getElementById('inpExp').value,
+            active: document.getElementById('inpActive').value
+        };
 
-        if(!newItem.name || !newItem.price || !newItem.buyPrice) return alert('أكمل البيانات الأساسية (الاسم، الشراء، البيع)');  
+        if(!newItem.name || !newItem.price || !newItem.buyPrice) return alert('أكمل البيانات الأساسية (الاسم، الشراء، البيع)');
 
-        if(idx === '') {  
-            db.push(newItem);  
-        } else {  
-            db[idx] = newItem;  
-        }  
-          
-        localStorage.setItem('wm_db_v23', JSON.stringify(db));  
-        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();  
-        refreshUI();  
-    }  
+        if(idx === '') {
+            db.push(newItem);
+        } else {
+            db[idx] = newItem;
+        }
+        
+        localStorage.setItem('wm_db_v23', JSON.stringify(db));
+        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+        refreshUI();
+    }
 
-    function deleteItem() {  
-        const idx = document.getElementById('editIndex').value;  
-        if(idx !== '' && confirm('حذف الصنف؟')) {  
-            db.splice(idx, 1);  
-            localStorage.setItem('wm_db_v23', JSON.stringify(db));  
-            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();  
-            refreshUI();  
-        }  
-    }  
+    function deleteItem() {
+        const idx = document.getElementById('editIndex').value;
+        if(idx !== '' && confirm('حذف الصنف؟')) {
+            db.splice(idx, 1);
+            localStorage.setItem('wm_db_v23', JSON.stringify(db));
+            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+            refreshUI();
+        }
+    }
 
-    // --- 6. Data & Charts/Reports Tools ---  
-    function openChartModal(type) {  
-        new bootstrap.Modal(document.getElementById('chartModal')).show();  
-        const ctx = document.getElementById('theChart').getContext('2d');  
-        const titleEl = document.getElementById('chartTitle');  
-        const valEl = document.getElementById('chartMainValue');  
-        const listEl = document.getElementById('detailedList');  
-        const headerEl = document.getElementById('reportHeader');  
-        const footerEl = document.getElementById('reportFooter');  
-        const exportBtn = document.getElementById('exportReportBtn'); // الزر الجديد  
-          
-        listEl.innerHTML = '';  
-        headerEl.innerText = '';  
-        footerEl.innerText = '';  
-        exportBtn.classList.add('d-none'); // إخفاء الزر افتراضياً  
+    // --- 6. Data & Charts/Reports Tools ---
+    function openChartModal(type) {
+        new bootstrap.Modal(document.getElementById('chartModal')).show();
+        const ctx = document.getElementById('theChart').getContext('2d');
+        const titleEl = document.getElementById('chartTitle');
+        const valEl = document.getElementById('chartMainValue');
+        const listEl = document.getElementById('detailedList');
+        const headerEl = document.getElementById('reportHeader');
+        const footerEl = document.getElementById('reportFooter');
+        const exportBtn = document.getElementById('exportReportBtn');
+        
+        listEl.innerHTML = '';
+        headerEl.innerText = '';
+        footerEl.innerText = '';
+        exportBtn.classList.add('d-none');
 
-        if(chartInstance) chartInstance.destroy();  
+        if(chartInstance) chartInstance.destroy();
 
-        let config = { type: 'doughnut', data: {}, options: { maintainAspectRatio: false } };  
+        let config = { type: 'doughnut', data: {}, options: { maintainAspectRatio: false } };
 
-        if(type === 'items') {  
-            titleEl.innerText = 'تقرير إجمالي الأصناف';  
-            valEl.innerText = db.length.toLocaleString() + ' صنف';  
-            headerEl.innerText = 'قائمة الأصناف المرقمة:';  
-              
-            // إظهار زر التصدير هنا  
-            exportBtn.classList.remove('d-none');  
-              
-            db.sort((a,b) => a.name.localeCompare(b.name, 'ar')); // فرز أبجدي  
-              
-            db.forEach((item, i) => {  
-                listEl.innerHTML += `  
-                    <li class="list-group-item d-flex justify-content-between align-items-start">  
-                        <div class="ms-2 me-auto">${item.name}</div>  
-                        <span class="badge bg-primary rounded-pill">${item.qty}</span>  
-                    </li>  
-                `;  
-            });  
-            footerEl.innerText = `إجمالي عدد الأصناف في المخزون: ${db.length}`;  
-              
-            // رسم بياني: توزيع الكميات حسب التصنيف (افتراضي)  
-            const cats = {};  
-            db.forEach(i => cats[i.active || 'غير مصنف'] = (cats[i.active || 'غير مصنف']||0) + i.qty);  
-            config.data = {  
-                labels: Object.keys(cats),  
-                datasets: [{ data: Object.values(cats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]  
-            };  
-          
-        } else if (type === 'value') {  
-            titleEl.innerText = 'تحليل القيمة المالية';  
-            const totalSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);  
-            const totalUSD = totalSDG / exchangeRate;  
-              
-            valEl.innerText = totalSDG.toLocaleString() + ' SDG';  
-            headerEl.innerText = 'ملخص القيمة:';  
-              
-            listEl.innerHTML = `  
-                <li class="list-group-item d-flex justify-content-between">الإجمالي بالجنيه السوداني (SDG): <b>${totalSDG.toLocaleString()}</b></li>  
-                <li class="list-group-item d-flex justify-content-between">الإجمالي بالدولار (USD): <b>${totalUSD.toFixed(2)}</b></li>  
-            `;  
-            footerEl.innerText = `سعر الصرف المستخدم: 1$ = ${exchangeRate.toLocaleString()} SDG.`;  
+        if(type === 'items') {
+            titleEl.innerText = 'تقرير إجمالي الأصناف';
+            valEl.innerText = db.length.toLocaleString() + ' صنف';
+            headerEl.innerText = 'قائمة الأصناف المرقمة:';
+            
+            exportBtn.classList.remove('d-none');
+            
+            db.sort((a,b) => a.name.localeCompare(b.name, 'ar'));
+            
+            db.forEach((item, i) => {
+                listEl.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">${item.name}</div>
+                        <span class="badge bg-primary rounded-pill">${item.qty}</span>
+                    </li>
+                `;
+            });
+            footerEl.innerText = `إجمالي عدد الأصناف في المخزون: ${db.length}`;
+            
+            const cats = {};
+            db.forEach(i => cats[i.active || 'غير مصنف'] = (cats[i.active || 'غير مصنف']||0) + i.qty);
+            config.data = {
+                labels: Object.keys(cats),
+                datasets: [{ data: Object.values(cats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
+            };
+        
+        } else if (type === 'value') {
+            titleEl.innerText = 'تحليل القيمة المالية';
+            const totalSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);
+            const totalUSD = totalSDG / exchangeRate;
+            
+            valEl.innerText = totalSDG.toLocaleString() + ' SDG';
+            headerEl.innerText = 'ملخص القيمة:';
+            
+            listEl.innerHTML = `
+                <li class="list-group-item d-flex justify-content-between">الإجمالي بالجنيه السوداني (SDG): <b>${totalSDG.toLocaleString()}</b></li>
+                <li class="list-group-item d-flex justify-content-between">الإجمالي بالدولار (USD): <b>${totalUSD.toFixed(2)}</b></li>
+            `;
+            footerEl.innerText = `سعر الصرف المستخدم: 1$ = ${exchangeRate.toLocaleString()} SDG.`;
 
-            // رسم بياني: توزيع القيمة (مبيعات)  
-            const valueCats = {};  
-            db.forEach(i => valueCats[i.active || 'غير مصنف'] = (valueCats[i.active || 'غير مصنف']||0) + (i.price * i.qty));  
-            config.data = {  
-                labels: Object.keys(valueCats),  
-                datasets: [{ data: Object.values(valueCats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]  
-            };  
+            const valueCats = {};
+            db.forEach(i => valueCats[i.active || 'غير مصنف'] = (valueCats[i.active || 'غير مصنف']||0) + (i.price * i.qty));
+            config.data = {
+                labels: Object.keys(valueCats),
+                datasets: [{ data: Object.values(valueCats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
+            };
 
-        } else if (type === 'expiry') {  
-            titleEl.innerText = 'تقرير الأصناف القريبة من الانتهاء';  
-            const today = new Date();  
-            const warnDate = new Date(); warnDate.setDate(today.getDate()+90);  
-              
-            const expiredAndSoon = db.filter(i => new Date(i.exp) <= warnDate).sort((a,b) => new Date(a.exp) - new Date(b.exp));  
-              
-            const expiredCount = expiredAndSoon.filter(i => new Date(i.exp) < today).length;  
-            valEl.innerText = `${expiredAndSoon.length} صنف في خطر`;  
-            headerEl.innerText = 'قائمة الأصناف (منتهي وقريب):';  
+        } else if (type === 'expiry') {
+            titleEl.innerText = 'تقرير الأصناف القريبة من الانتهاء';
+            const today = new Date();
+            const warnDate = new Date(); warnDate.setDate(today.getDate()+90);
+            
+            const expiredAndSoon = db.filter(i => new Date(i.exp) <= warnDate).sort((a,b) => new Date(a.exp) - new Date(b.exp));
+            
+            const expiredCount = expiredAndSoon.filter(i => new Date(i.exp) < today).length;
+            valEl.innerText = `${expiredAndSoon.length} صنف في خطر`;
+            headerEl.innerText = 'قائمة الأصناف (منتهي وقريب):';
 
-            expiredAndSoon.forEach((item) => {  
-                const daysLeft = Math.ceil((new Date(item.exp) - today) / (1000*60*60*24));  
-                const statusText = daysLeft < 0 ?   
-                    `<span class="text-danger fw-bold">منتهي منذ ${Math.abs(daysLeft)} يوم</span>` :   
-                    `<span class="text-warning fw-bold">متبقي ${daysLeft} يوم</span>`;  
+            expiredAndSoon.forEach((item) => {
+                const daysLeft = Math.ceil((new Date(item.exp) - today) / (1000*60*60*24));
+                const statusText = daysLeft < 0 ? 
+                    `<span class="text-danger fw-bold">منتهي منذ ${Math.abs(daysLeft)} يوم</span>` : 
+                    `<span class="text-warning fw-bold">متبقي ${daysLeft} يوم</span>`;
 
-                listEl.innerHTML += `  
-                    <li class="list-group-item d-flex justify-content-between align-items-center">  
-                        <div class="ms-2 me-auto">  
-                            ${item.name} <small class="text-muted">(${item.exp})</small>  
-                        </div>  
-                        ${statusText}  
-                    </li>  
-                `;  
-            });  
-            footerEl.innerText = `عدد الأصناف المنتهية: ${expiredCount}. يرجى اتخاذ الإجراء اللازم.`;  
+                listEl.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="ms-2 me-auto">
+                            ${item.name} <small class="text-muted">(${item.exp})</small>
+                        </div>
+                        ${statusText}
+                    </li>
+                `;
+            });
+            footerEl.innerText = `عدد الأصناف المنتهية: ${expiredCount}. يرجى اتخاذ الإجراء اللازم.`;
 
-            const soonCount = expiredAndSoon.length - expiredCount;  
-            const safe = db.length - expiredAndSoon.length;  
-              
-            config.data = {  
-                labels: ['منتهي', 'قريب', 'سليم'],  
-                datasets: [{ data: [expiredCount, soonCount, safe], backgroundColor: ['#dc3545', '#ffc107', '#198754'] }]  
-            };  
+            const soonCount = expiredAndSoon.length - expiredCount;
+            const safe = db.length - expiredAndSoon.length;
+            
+            config.data = {
+                labels: ['منتهي', 'قريب', 'سليم'],
+                datasets: [{ data: [expiredCount, soonCount, safe], backgroundColor: ['#dc3545', '#ffc107', '#198754'] }]
+            };
 
-        } else if (type === 'stock') {  
-            titleEl.innerText = 'تقرير الأصناف الناقصة (أقل من 5)';  
-            const lowStock = db.filter(i => i.qty < 5).sort((a,b) => a.qty - b.qty);  
-            valEl.innerText = `${lowStock.length} صنف يحتاج شراء`;  
-            headerEl.innerText = 'قائمة الأصناف الناقصة:';  
+        } else if (type === 'stock') {
+            titleEl.innerText = 'تقرير الأصناف الناقصة (أقل من 5)';
+            const lowStock = db.filter(i => i.qty < 5).sort((a,b) => a.qty - b.qty);
+            valEl.innerText = `${lowStock.length} صنف يحتاج شراء`;
+            headerEl.innerText = 'قائمة الأصناف الناقصة:';
 
-            lowStock.forEach((item) => {  
-                listEl.innerHTML += `  
-                    <li class="list-group-item d-flex justify-content-between align-items-center">  
-                        <div class="ms-2 me-auto">${item.name}</div>  
-                        <span class="badge bg-danger rounded-pill">${item.qty} متبقي</span>  
-                    </li>  
-                `;  
-            });  
-            footerEl.innerText = `عدد الأصناف التي تحتاج إعادة طلب: ${lowStock.length}.`;  
-              
-            const activeLow = {};  
-            lowStock.forEach(i => activeLow[i.active || 'غير مصنف'] = (activeLow[i.active || 'غير مصنف']||0) + i.qty);  
-            config.data = {  
-                labels: Object.keys(activeLow),  
-                datasets: [{ data: Object.values(activeLow), backgroundColor: ['#ffc107', '#dc3545', '#0d6efd', '#198754'] }]  
-            };  
-        }  
+            lowStock.forEach((item) => {
+                listEl.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="ms-2 me-auto">${item.name}</div>
+                        <span class="badge bg-danger rounded-pill">${item.qty} متبقي</span>
+                    </li>
+                `;
+            });
+            footerEl.innerText = `عدد الأصناف التي تحتاج إعادة طلب: ${lowStock.length}.`;
+            
+            const activeLow = {};
+            lowStock.forEach(i => activeLow[i.active || 'غير مصنف'] = (activeLow[i.active || 'غير مصنف']||0) + i.qty);
+            config.data = {
+                labels: Object.keys(activeLow),
+                datasets: [{ data: Object.values(activeLow), backgroundColor: ['#ffc107', '#dc3545', '#0d6efd', '#198754'] }]
+            };
+        }
 
-        chartInstance = new Chart(ctx, config);  
-    }  
+        chartInstance = new Chart(ctx, config);
+    }
 
-    // الدالة الجديدة لتصدير التقرير  
-    function exportDetailedReport() {  
-        // نحدد الأعمدة التي نحتاجها في ملف Excel وبنفس الترتيب المتوقع للاستيراد  
-        const exportData = db.map(item => ({  
-            name: item.name,  
-            qty: item.qty,  
-            price: item.price,    // سعر البيع (الذي يمثل price في الكود الحالي)  
-            exp: item.exp,  
-            active: item.active,  
-            buyPrice: item.buyPrice || 0 // سعر الشراء  
-        }));  
-          
-        // لضمان التنسيق الصحيح للرؤوس التي يقبلها الاستيراد  
-        const ws = XLSX.utils.json_to_sheet(exportData, {   
-            header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice']   
-        });  
-          
-        const wb = XLSX.utils.book_new();  
-        XLSX.utils.book_append_sheet(wb, ws, "Inventory_Export");  
-        XLSX.writeFile(wb, "Inventory_Full_Report_" + new Date().toISOString().slice(0,10) + ".xlsx");  
+    function exportDetailedReport() {
+        const exportData = db.map(item => ({
+            name: item.name,
+            qty: item.qty,
+            price: item.price,
+            exp: item.exp,
+            active: item.active,
+            buyPrice: item.buyPrice || 0
+        }));
+        
+        const ws = XLSX.utils.json_to_sheet(exportData, { 
+            header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'] 
+        });
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Inventory_Export");
+        XLSX.writeFile(wb, "Inventory_Full_Report_" + new Date().toISOString().slice(0,10) + ".xlsx");
 
-        alert("تم تصدير التقرير بنجاح! يمكن استخدام هذا الملف للاستيراد مرة أخرى.");  
-    }  
+        alert("تم تصدير التقرير بنجاح! يمكن استخدام هذا الملف للاستيراد مرة أخرى.");
+    }
 
+    // --- 7. Data Backup/Restore/Import ---
+    function backupData() {
+        const dataStr = JSON.stringify(db);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "inventory_backup_" + new Date().toISOString().slice(0,10) + ".json";
+        a.click();
+    }
+    
+    function smartMerge(newData, mergeType) {
+        let finalDb = db;
+        
+        if(mergeType === 'replace') {
+            finalDb = newData;
+        } else if (mergeType === 'merge') {
+            newData.forEach(newItem => {
+                const existingIndex = finalDb.findIndex(item => item.name === newItem.name);
+                if (existingIndex !== -1) {
+                    finalDb[existingIndex].qty = (finalDb[existingIndex].qty || 0) + (newItem.qty || 0);
+                    finalDb[existingIndex].price = newItem.price || finalDb[existingIndex].price;
+                    finalDb[existingIndex].buyPrice = newItem.buyPrice || finalDb[existingIndex].buyPrice;
+                    if (new Date(newItem.exp) > new Date(finalDb[existingIndex].exp)) {
+                        finalDb[existingIndex].exp = newItem.exp;
+                    }
+                } else {
+                    finalDb.push(newItem);
+                }
+            });
+        } else if (mergeType === 'add_new') {
+            finalDb = finalDb.concat(newData);
+        }
 
-    // --- 7. Data Backup/Restore/Import ---  
-    function backupData() {  
-        const dataStr = JSON.stringify(db);  
-        const blob = new Blob([dataStr], {type: "application/json"});  
-        const url = URL.createObjectURL(blob);  
-        const a = document.createElement('a');  
-        a.href = url;  
-        a.download = "inventory_backup_" + new Date().toISOString().slice(0,10) + ".json";  
-        a.click();  
-    }  
-      
-    // دالة الدمج الذكي للبيانات المستوردة  
-    function smartMerge(newData, mergeType) {  
-        let finalDb = db;  
-          
-        if(mergeType === 'replace') {  
-            finalDb = newData;  
-        } else if (mergeType === 'merge') {  
-            newData.forEach(newItem => {  
-                const existingIndex = finalDb.findIndex(item => item.name === newItem.name);  
-                if (existingIndex !== -1) {  
-                    // الصنف موجود: قم بدمج الكمية  
-                    finalDb[existingIndex].qty = (finalDb[existingIndex].qty || 0) + (newItem.qty || 0);  
-                    // تحديث بيانات أخرى  
-                    finalDb[existingIndex].price = newItem.price || finalDb[existingIndex].price;  
-                    finalDb[existingIndex].buyPrice = newItem.buyPrice || finalDb[existingIndex].buyPrice;  
-                    if (new Date(newItem.exp) > new Date(finalDb[existingIndex].exp)) {  
-                        finalDb[existingIndex].exp = newItem.exp;  
-                    }  
-                } else {  
-                    // الصنف غير موجود: قم بإضافته  
-                    finalDb.push(newItem);  
-                }  
-            });  
-        } else if (mergeType === 'add_new') {  
-            // إضافة كصنف جديد حتى لو كان الاسم مكرر  
-            finalDb = finalDb.concat(newData);  
-        }  
+        db = finalDb;
+        localStorage.setItem('wm_db_v23', JSON.stringify(db));
+        refreshUI();
+    }
 
-        db = finalDb;  
-        localStorage.setItem('wm_db_v23', JSON.stringify(db));  
-        refreshUI(); // تحديث الواجهة بدلاً من إعادة تحميل الصفحة  
-    }  
+    function handleRestoreFile(input) {
+        const file = input.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const loaded = JSON.parse(e.target.result);
+                stagedData = loaded;
+                mergeContext = 'JSON';
+                
+                document.getElementById('mergeMessage').innerText = 'ملف النسخة الاحتياطية جاهز للاستعادة.';
+                document.getElementById('replaceBtn').style.display = 'block';
+                new bootstrap.Modal(document.getElementById('mergeModal')).show();
 
-    function handleRestoreFile(input) {  
-        const file = input.files[0];  
-        if(!file) return;  
-          
-        const reader = new FileReader();  
-        reader.onload = function(e) {  
-            try {  
-                const loaded = JSON.parse(e.target.result);  
-                stagedData = loaded; // تخزين البيانات مؤقتاً  
-                mergeContext = 'JSON'; // تحديد السياق  
-                  
-                document.getElementById('mergeMessage').innerText = 'ملف النسخة الاحتياطية جاهز للاستعادة.';  
-                document.getElementById('replaceBtn').style.display = 'block'; // إظهار خيار الاستبدال لـ JSON  
-                new bootstrap.Modal(document.getElementById('mergeModal')).show();  
+            } catch(err) { alert('ملف JSON غير صالح'); }
+        };
+        reader.readAsText(file);
+    }
+    
+    function handleImportExcelFile(input) {
+        const file = input.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
 
-            } catch(err) { alert('ملف JSON غير صالح'); }  
-        };  
-        reader.readAsText(file);  
-    }  
-      
-    function handleImportExcelFile(input) {  
-        const file = input.files[0];  
-        if(!file) return;  
-          
-        const reader = new FileReader();  
-        reader.onload = function(e) {  
-            try {  
-                const data = new Uint8Array(e.target.result);  
-                const workbook = XLSX.read(data, {type: 'array'});  
-                const sheetName = workbook.SheetNames[0];  
-                const worksheet = workbook.Sheets[sheetName];  
+                const json = XLSX.utils.sheet_to_json(worksheet, {
+                    header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'],
+                    raw: false
+                });
 
-                const json = XLSX.utils.sheet_to_json(worksheet, {  
-                    header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'],  
-                    raw: false  
-                });  
+                const loadedData = json.map(item => {
+                    let expDate = item.exp;
+                    if (expDate) {
+                        if (!isNaN(parseFloat(expDate)) && isFinite(expDate)) {
+                            expDate = convertExcelDate(parseFloat(expDate));
+                        } else {
+                            expDate = String(expDate).split('T')[0];
+                        }
+                    }
 
-                const loadedData = json.map(item => {  
-                    let expDate = item.exp;  
-                    if (expDate) {  
-                        if (!isNaN(parseFloat(expDate)) && isFinite(expDate)) {  
-                            expDate = convertExcelDate(parseFloat(expDate));  
-                        } else {  
-                            expDate = String(expDate).split('T')[0];   
-                        }  
-                    }  
+                    return {
+                        name: item.name || 'Unknown',
+                        qty: Number(item.qty) || 0,
+                        price: Number(item.price) || 0,
+                        buyPrice: Number(item.buyPrice) || 0,
+                        exp: expDate || 'غير معروف',
+                        active: item.active || ''
+                    };
+                }).filter(item => item.name !== 'Unknown' && item.qty > 0);
 
-                    return {  
-                        name: item.name || 'Unknown',  
-                        qty: Number(item.qty) || 0,  
-                        price: Number(item.price) || 0,  
-                        buyPrice: Number(item.buyPrice) || 0,  
-                        exp: expDate || 'غير معروف',  
-                        active: item.active || ''  
-                    };  
-                }).filter(item => item.name !== 'Unknown' && item.qty > 0);  
+                if (loadedData.length === 0) {
+                    throw new Error('لم يتم العثور على أي بيانات صالحة بعد التحويل. تأكد من تسمية الأعمدة بشكل دقيق.');
+                }
+                
+                stagedData = loadedData;
+                mergeContext = 'Excel';
+                
+                document.getElementById('mergeMessage').innerText = `تم تحميل ${loadedData.length} صنف بنجاح من ملف Excel.`;
+                document.getElementById('replaceBtn').style.display = 'block';
+                new bootstrap.Modal(document.getElementById('mergeModal')).show();
 
-                if (loadedData.length === 0) {  
-                    throw new Error('لم يتم العثور على أي بيانات صالحة بعد التحويل. تأكد من تسمية الأعمدة بشكل دقيق.');  
-                }  
-                  
-                stagedData = loadedData; // تخزين البيانات مؤقتاً  
-                mergeContext = 'Excel'; // تحديد السياق  
-                  
-                document.getElementById('mergeMessage').innerText = `تم تحميل ${loadedData.length} صنف بنجاح من ملف Excel.`;  
-                document.getElementById('replaceBtn').style.display = 'block'; // إظهار خيار الاستبدال لـ Excel  
-                new bootstrap.Modal(document.getElementById('mergeModal')).show();  
+            } catch(err) {
+                console.error(err);
+                alert('فشل في استيراد ملف Excel. تأكد من أن الأعمدة مرتبة ومسمّاة هكذا: name, qty, price, exp, active, buyPrice.');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    
+    function processMerge(mergeOption) {
+        bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide();
+        
+        if (stagedData) {
+            smartMerge(stagedData, mergeOption);
+            alert(`تم تنفيذ عملية ${mergeOption} بنجاح. تم تحديث ${db.length} صنف.`);
+        }
+        
+        stagedData = null;
+        mergeContext = '';
+    }
 
-            } catch(err) {   
-                console.error(err);  
-                alert('فشل في استيراد ملف Excel. تأكد من أن الأعمدة مرتبة ومسمّاة هكذا: name, qty, price, exp, active, buyPrice.');  
-            }  
-        };  
-        reader.readAsArrayBuffer(file);  
-    }  
-      
-    // الدالة التي يتم استدعاؤها من أزرار الدمج  
-    function processMerge(mergeOption) {  
-        bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide();  
-          
-        if (stagedData) {  
-            // *** الإصلاح هنا: استدعاء smartMerge وتحديث الواجهة مباشرة *** smartMerge(stagedData, mergeOption);  
-            alert(`تم تنفيذ عملية ${mergeOption} بنجاح. تم تحديث ${db.length} صنف.`);  
-        }  
-          
-        // تنظيف البيانات المؤقتة  
-        stagedData = null;  
-        mergeContext = '';  
-    }  
+    function convertExcelDate(excelDate) {
+        if (typeof excelDate === 'string' && excelDate.includes('-')) {
+            return excelDate;
+        }
+        const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+        return date.toISOString().split('T')[0];
+    }
 
+    // --- 8. AI OCR ---
+    async function handleOCR(input) {
+        if(!input.files[0]) return;
+        document.getElementById('ocrLoading').classList.remove('d-none');
+        try {
+            const res = await Tesseract.recognize(input.files[0], 'eng+ara');
+            const text = res.data.text;
+            const lines = text.split('\n').filter(l => l.trim().length > 3);
+            if(lines.length > 0) document.getElementById('inpName').value = lines[0];
+            alert('تم استخراج النص، يرجى المراجعة وتعبئة الأرقام.');
+        } catch(e) { alert('فشل التعرف على الصورة'); }
+        document.getElementById('ocrLoading').classList.add('d-none');
+    }
 
-    function convertExcelDate(excelDate) {  
-        if (typeof excelDate === 'string' && excelDate.includes('-')) {  
-            return excelDate;  
-        }  
-        const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));  
-        return date.toISOString().split('T')[0];  
-    }  
+    // --- 9. دوال مسح الفاتورة ---
+    function openScanInvoiceModal() {
+        document.getElementById('invoiceNumber').value = 'INV-' + Date.now().toString().slice(-6);
+        document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('supplierName').value = '';
+        document.getElementById('extractedItems').innerHTML = '';
+        extractedInvoiceItems = null;
+        new bootstrap.Modal(document.getElementById('scanInvoiceModal')).show();
+    }
 
+    async function handleInvoiceScan(input) {
+        if (!input.files[0]) return;
+        
+        document.getElementById('invoiceLoading').classList.remove('d-none');
+        const file = input.files[0];
+        
+        try {
+            let extractedText = '';
+            
+            if (file.type === 'application/pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    extractedText += textContent.items.map(item => item.str).join(' ') + '\n';
+                }
+            } else {
+                const worker = await Tesseract.createWorker('ara+eng');
+                const { data: { text } } = await worker.recognize(file);
+                extractedText = text;
+                await worker.terminate();
+            }
+            
+            const items = extractMedicinesFromText(extractedText);
+            displayExtractedItems(items);
+            
+        } catch (error) {
+            console.error('خطأ في معالجة الفاتورة:', error);
+            alert('فشل قراءة الفاتورة. يرجى المحاولة مرة أخرى أو إدخال البيانات يدوياً.');
+        }
+        
+        document.getElementById('invoiceLoading').classList.add('d-none');
+    }
 
-    // --- 8. AI OCR ---  
-    async function handleOCR(input) {  
-        if(!input.files[0]) return;  
-        document.getElementById('ocrLoading').classList.remove('d-none');  
-        try {  
-            const res = await Tesseract.recognize(input.files[0], 'eng+ara');  
-            const text = res.data.text;  
-            const lines = text.split('\n').filter(l => l.trim().length > 3);  
-            if(lines.length > 0) document.getElementById('inpName').value = lines[0];  
-            alert('تم استخراج النص، يرجى المراجعة وتعبئة الأرقام.');  
-        } catch(e) { alert('فشل التعرف على الصورة'); }  
-        document.getElementById('ocrLoading').classList.add('d-none');  
-    }  
+    function extractMedicinesFromText(text) {
+        const items = [];
+        const lines = text.split('\n').filter(line => line.trim().length > 0);
+        
+        const medicinePatterns = [
+            /([A-Za-z\u0600-\u06FF][\s\S]{3,}?)\s+(\d+)\s+([\d,\.]+)/,
+            /([A-Za-z\u0600-\u06FF][\s\S]{3,}?)\s*x\s*(\d+)\s*=\s*([\d,\.]+)/,
+            /(\d+)\s+([A-Za-z\u0600-\u06FF][\s\S]{3,}?)\s+([\d,\.]+)/
+        ];
+        
+        for (const line of lines) {
+            let matchFound = false;
+            
+            for (const pattern of medicinePatterns) {
+                const match = line.match(pattern);
+                if (match) {
+                    let name, qty, price;
+                    
+                    if (pattern === medicinePatterns[2]) {
+                        name = match[1].trim();
+                        qty = parseInt(match[2]) || 1;
+                        price = parseFloat(match[3].replace(',', '')) || 0;
+                    } else if (pattern === medicinePatterns[0]) {
+                        name = match[1].trim();
+                        qty = parseInt(match[2]) || 1;
+                        price = parseFloat(match[3].replace(',', '')) || 0;
+                    } else {
+                        qty = parseInt(match[1]) || 1;
+                        name = match[2].trim();
+                        price = parseFloat(match[3].replace(',', '')) || 0;
+                    }
+                    
+                    if (name.length > 2 && !/^\d+$/.test(name) && price > 0) {
+                        items.push({
+                            name: name,
+                            qty: qty,
+                            price: price,
+                            buyPrice: price * 0.8,
+                            exp: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                            active: '',
+                            source: 'فاتورة'
+                        });
+                        matchFound = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!matchFound) {
+                const medicineKeywords = ['دواء', 'علاج', 'كبسولة', 'حبة', 'شراب', 'مرهم', 'حقنة'];
+                if (medicineKeywords.some(keyword => line.includes(keyword)) && line.length > 5) {
+                    items.push({
+                        name: line.trim(),
+                        qty: 1,
+                        price: 0,
+                        buyPrice: 0,
+                        exp: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        active: '',
+                        source: 'فاتورة'
+                    });
+                }
+            }
+        }
+        
+        return items;
+    }
 
-    // --- 9. [ADD-ON] Functions for Dark Mode, Lang, & Safety ---
+    function displayExtractedItems(items) {
+        const container = document.getElementById('extractedItems');
+        container.innerHTML = '';
+        
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> لم يتم العثور على أدوية في الفاتورة.
+                    يرجى إضافة العناصر يدوياً.
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> تم استخراج ${items.length} عنصر من الفاتورة
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>الدواء</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        let total = 0;
+        items.forEach((item, index) => {
+            const itemTotal = item.qty * item.price;
+            total += itemTotal;
+            
+            html += `
+                <tr>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" 
+                               value="${item.name}" 
+                               onchange="updateExtractedItem(${index}, 'name', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" 
+                               value="${item.qty}" 
+                               onchange="updateExtractedItem(${index}, 'qty', this.value)" 
+                               style="width: 80px;">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" 
+                               value="${item.price}" 
+                               onchange="updateExtractedItem(${index}, 'price', this.value)" 
+                               style="width: 100px;">
+                    </td>
+                    <td class="fw-bold">${itemTotal.toLocaleString()} SDG</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-success">
+                            <td colspan="3" class="text-end fw-bold">الإجمالي:</td>
+                            <td class="fw-bold">${total.toLocaleString()} SDG</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        extractedInvoiceItems = items;
+    }
+
+    function updateExtractedItem(index, field, value) {
+        if (extractedInvoiceItems && extractedInvoiceItems[index]) {
+            if (field === 'qty' || field === 'price') {
+                extractedInvoiceItems[index][field] = Number(value);
+            } else {
+                extractedInvoiceItems[index][field] = value;
+            }
+            
+            displayExtractedItems(extractedInvoiceItems);
+        }
+    }
+
+    function processInvoice() {
+        if (!extractedInvoiceItems || extractedInvoiceItems.length === 0) {
+            alert('لا توجد عناصر في الفاتورة');
+            return;
+        }
+        
+        const invoiceNumber = document.getElementById('invoiceNumber').value;
+        const invoiceDate = document.getElementById('invoiceDate').value;
+        const supplierName = document.getElementById('supplierName').value;
+        
+        let addedCount = 0;
+        extractedInvoiceItems.forEach(item => {
+            if (item.name && item.qty > 0) {
+                const existingIndex = db.findIndex(i => 
+                    i.name.toLowerCase() === item.name.toLowerCase()
+                );
+                
+                if (existingIndex !== -1) {
+                    db[existingIndex].qty += item.qty;
+                    if (item.buyPrice > (db[existingIndex].buyPrice || 0)) {
+                        db[existingIndex].buyPrice = item.buyPrice;
+                    }
+                    addedCount++;
+                } else {
+                    db.push({
+                        name: item.name,
+                        qty: item.qty,
+                        price: item.price || item.buyPrice * 1.2,
+                        buyPrice: item.buyPrice,
+                        exp: item.exp,
+                        active: item.active || '',
+                        source: supplierName ? `فاتورة ${invoiceNumber} - ${supplierName}` : `فاتورة ${invoiceNumber}`
+                    });
+                    addedCount++;
+                }
+            }
+        });
+        
+        const invoice = {
+            id: invoiceNumber,
+            date: invoiceDate,
+            supplier: supplierName,
+            items: extractedInvoiceItems,
+            total: extractedInvoiceItems.reduce((sum, item) => sum + (item.qty * (item.price || item.buyPrice)), 0),
+            addedToInventory: addedCount,
+            timestamp: new Date().toISOString()
+        };
+        
+        let invoices = JSON.parse(localStorage.getItem('wm_invoices')) || [];
+        invoices.unshift(invoice);
+        localStorage.setItem('wm_invoices', JSON.stringify(invoices));
+        
+        localStorage.setItem('wm_db_v23', JSON.stringify(db));
+        
+        bootstrap.Modal.getInstance(document.getElementById('scanInvoiceModal')).hide();
+        refreshUI();
+        
+        alert(`تمت إضافة الفاتورة بنجاح!\n\nرقم الفاتورة: ${invoiceNumber}\nعدد العناصر المضافة: ${addedCount}\nالإجمالي: ${invoice.total.toLocaleString()} SDG`);
+        
+        extractedInvoiceItems = null;
+    }
+
+    // --- 10. Add-ons Functions ---
     function addon_toggleDark() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
@@ -900,18 +1195,15 @@
         localStorage.setItem('wm_lang_dir', newDir);
     }
 
-    // Initialize Add-ons on load
-    (function addon_init() {
-        // Dark Mode Load
+    function addon_init() {
         if(localStorage.getItem('wm_dark_mode') === 'true') {
             document.body.classList.add('dark-mode');
             document.getElementById('darkIcon').className = 'fas fa-sun';
         }
-        // Language Load
+        
         const savedDir = localStorage.getItem('wm_lang_dir');
         if(savedDir) document.documentElement.setAttribute('dir', savedDir);
 
-        // Safety Fixes (Null/NaN protection)
         db = db.map(item => ({
             name: item.name || "بدون اسم",
             qty: isNaN(item.qty) ? 0 : Number(item.qty),
@@ -920,7 +1212,11 @@
             exp: item.exp || new Date().toISOString().split('T')[0],
             active: item.active || ""
         }));
-    })();
+        
+        if (!localStorage.getItem('wm_invoices')) {
+            localStorage.setItem('wm_invoices', JSON.stringify([]));
+        }
+    }
 
     // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
@@ -928,9 +1224,8 @@
             navigator.serviceWorker.register('/sw.js').catch(() => {});
         });
     }
-      
-</script>  
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-</body>  
-</html>
+</body>
+    </html>
