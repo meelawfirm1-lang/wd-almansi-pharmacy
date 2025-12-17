@@ -138,6 +138,13 @@
             border-radius: 8px;
             background: #f0fdf4; /* Light green background */
         }
+        
+        /* New Styles for buttons in merge modal */
+        #mergeOptions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -170,8 +177,8 @@
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</a></li>
                 </ul>
-                <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)" accept=".json">
-                <input type="file" id="importExcelFile" style="display:none" onchange="importExcelData(this)" accept=".xlsx, .xls">
+                <input type="file" id="restoreFile" style="display:none" onchange="handleRestoreFile(this)" accept=".json">
+                <input type="file" id="importExcelFile" style="display:none" onchange="handleImportExcelFile(this)" accept=".xlsx, .xls">
             </div>
 
             <h5 class="m-0 fw-bold text-success">إدارة مخزون الصيدلية</h5>
@@ -291,6 +298,33 @@
             </div>
         </div>
     </div>
+    
+    <div class="modal fade" id="mergeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">خيارات دمج البيانات</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="mergeMessage" class="lead text-center fw-bold"></p>
+                    <p class="text-muted small text-center">يرجى اختيار طريقة دمج الملف المستورد مع بياناتك الحالية:</p>
+                    <div id="mergeOptions">
+                        <button onclick="processMerge('merge')" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-code-branch"></i> دمج (Merge): دمج الكميات وتحديث البقية
+                        </button>
+                        <button onclick="processMerge('add_new')" class="btn btn-outline-success w-100">
+                            <i class="fas fa-plus-circle"></i> إضافة كأصناف جديدة
+                        </button>
+                        <button onclick="processMerge('replace')" id="replaceBtn" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-trash-alt"></i> استبدال (Replace): حذف كل البيانات الحالية واستبدالها
+                        </button>
+                    </div>
+                    <small class="text-danger mt-3 d-block text-center">**تنبيه: زر الاستبدال سيحذف كل بياناتك الحالية.**</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="chartModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
@@ -327,6 +361,8 @@
         let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];
         let chartInstance = null;
         let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000; // سعر الصرف الافتراضي
+        let stagedData = null; // لتخزين البيانات مؤقتا قبل الدمج
+        let mergeContext = ''; // لتحديد سياق الدمج (JSON/Excel)
 
         // تحميل سعر الصرف عند بدء التشغيل
         document.addEventListener('DOMContentLoaded', () => {
@@ -679,35 +715,38 @@
         
         // دالة الدمج الذكي للبيانات المستوردة
         function smartMerge(newData, mergeType) {
+            let finalDb = db;
+            
             if(mergeType === 'replace') {
-                return newData;
-            }
-
-            if (mergeType === 'merge') {
+                finalDb = newData;
+            } else if (mergeType === 'merge') {
                 newData.forEach(newItem => {
-                    const existingIndex = db.findIndex(item => item.name === newItem.name);
+                    const existingIndex = finalDb.findIndex(item => item.name === newItem.name);
                     if (existingIndex !== -1) {
                         // الصنف موجود: قم بدمج الكمية
-                        db[existingIndex].qty += newItem.qty;
-                        // تحديث بيانات أخرى إذا لزم الأمر (مثل السعر أو التاريخ الأبعد)
-                        db[existingIndex].price = newItem.price || db[existingIndex].price;
-                        db[existingIndex].buyPrice = newItem.buyPrice || db[existingIndex].buyPrice;
-                        if (new Date(newItem.exp) > new Date(db[existingIndex].exp)) {
-                            db[existingIndex].exp = newItem.exp;
+                        finalDb[existingIndex].qty = (finalDb[existingIndex].qty || 0) + (newItem.qty || 0);
+                        // تحديث بيانات أخرى
+                        finalDb[existingIndex].price = newItem.price || finalDb[existingIndex].price;
+                        finalDb[existingIndex].buyPrice = newItem.buyPrice || finalDb[existingIndex].buyPrice;
+                        if (new Date(newItem.exp) > new Date(finalDb[existingIndex].exp)) {
+                            finalDb[existingIndex].exp = newItem.exp;
                         }
                     } else {
                         // الصنف غير موجود: قم بإضافته
-                        db.push(newItem);
+                        finalDb.push(newItem);
                     }
                 });
             } else if (mergeType === 'add_new') {
                 // إضافة كصنف جديد حتى لو كان الاسم مكرر
-                db = db.concat(newData);
+                finalDb = finalDb.concat(newData);
             }
-            return db;
+
+            db = finalDb;
+            localStorage.setItem('wm_db_v23', JSON.stringify(db));
+            refreshUI(); // تحديث الواجهة بدلاً من إعادة تحميل الصفحة
         }
 
-        function restoreData(input) {
+        function handleRestoreFile(input) {
             const file = input.files[0];
             if(!file) return;
             
@@ -715,33 +754,19 @@
             reader.onload = function(e) {
                 try {
                     const loaded = JSON.parse(e.target.result);
+                    stagedData = loaded; // تخزين البيانات مؤقتاً
+                    mergeContext = 'JSON'; // تحديد السياق
                     
-                    const mergeOption = prompt('كيف تريد التعامل مع البيانات المستوردة؟\n1. merge (دمج مع الموجود)\n2. add_new (إضافة كصنف جديد)\n3. replace (استبدال بالكامل)', 'merge');
-                    
-                    if(mergeOption) {
-                        db = smartMerge(loaded, mergeOption.toLowerCase());
-                        localStorage.setItem('wm_db_v23', JSON.stringify(db));
-                        location.reload();
-                    }
+                    document.getElementById('mergeMessage').innerText = 'ملف النسخة الاحتياطية جاهز للاستعادة.';
+                    document.getElementById('replaceBtn').style.display = 'block'; // إظهار خيار الاستبدال لـ JSON
+                    new bootstrap.Modal(document.getElementById('mergeModal')).show();
+
                 } catch(err) { alert('ملف JSON غير صالح'); }
             };
             reader.readAsText(file);
         }
-
-        function convertExcelDate(excelDate) {
-            // إذا كان التاريخ بالفعل في صيغة سلسلة (مثل YYYY-MM-DD)، لا حاجة للتحويل
-            if (typeof excelDate === 'string' && excelDate.includes('-')) {
-                return excelDate;
-            }
-            // صيغة Excel تبدأ من 1 يناير 1900. 
-            // 25569 هو عدد الأيام بين 1900-01-01 و 1970-01-01.
-            const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-            // تنسيق التاريخ إلى YYYY-MM-DD
-            return date.toISOString().split('T')[0];
-        }
-
-
-        function importExcelData(input) {
+        
+        function handleImportExcelFile(input) {
             const file = input.files[0];
             if(!file) return;
             
@@ -753,22 +778,17 @@
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
 
-                    // *** الإصلاح الأول: إزالة خاصية range: 1 لضمان قراءة البيانات حتى لو لم تكن الرؤوس في الصف الأول ***
                     const json = XLSX.utils.sheet_to_json(worksheet, {
-                        header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'], // تحديد الرؤوس المتوقعة
-                        raw: false // قراءة القيم المنسقة بدلاً من القيم الخام، لكن سنعتمد على التحويل يدوياً
+                        header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'],
+                        raw: false
                     });
 
-                    // تنظيف وتحويل التواريخ والأرقام
                     const loadedData = json.map(item => {
                         let expDate = item.exp;
-                        // *** الإصلاح الثاني: استخدام دالة التحويل المحدثة للتواريخ ***
                         if (expDate) {
-                            // إذا كانت القيمة رقمية (تاريخ Excel)، قم بتحويلها
                             if (!isNaN(parseFloat(expDate)) && isFinite(expDate)) {
                                 expDate = convertExcelDate(parseFloat(expDate));
                             } else {
-                                // إذا كانت سلسلة نصية بالفعل، استخدمها كما هي
                                 expDate = String(expDate).split('T')[0]; 
                             }
                         }
@@ -776,8 +796,8 @@
                         return {
                             name: item.name || 'Unknown',
                             qty: Number(item.qty) || 0,
-                            price: Number(item.price) || 0, // سعر البيع
-                            buyPrice: Number(item.buyPrice) || 0, // سعر الشراء
+                            price: Number(item.price) || 0,
+                            buyPrice: Number(item.buyPrice) || 0,
                             exp: expDate || 'غير معروف',
                             active: item.active || ''
                         };
@@ -786,21 +806,44 @@
                     if (loadedData.length === 0) {
                         throw new Error('لم يتم العثور على أي بيانات صالحة بعد التحويل. تأكد من تسمية الأعمدة بشكل دقيق.');
                     }
-
-
-                    const mergeOption = prompt('كيف تريد التعامل مع بيانات Excel؟\n1. merge (دمج مع الموجود)\n2. add_new (إضافة كصنف جديد)', 'merge');
                     
-                    if(mergeOption) {
-                        db = smartMerge(loadedData, mergeOption.toLowerCase());
-                        localStorage.setItem('wm_db_v23', JSON.stringify(db));
-                        location.reload();
-                    }
+                    stagedData = loadedData; // تخزين البيانات مؤقتاً
+                    mergeContext = 'Excel'; // تحديد السياق
+                    
+                    document.getElementById('mergeMessage').innerText = `تم تحميل ${loadedData.length} صنف بنجاح من ملف Excel.`;
+                    document.getElementById('replaceBtn').style.display = 'block'; // إظهار خيار الاستبدال لـ Excel
+                    new bootstrap.Modal(document.getElementById('mergeModal')).show();
+
                 } catch(err) { 
                     console.error(err);
                     alert('فشل في استيراد ملف Excel. تأكد من أن الأعمدة مرتبة ومسمّاة هكذا: name, qty, price, exp, active, buyPrice.');
                 }
             };
             reader.readAsArrayBuffer(file);
+        }
+        
+        // الدالة التي يتم استدعاؤها من أزرار الدمج
+        function processMerge(mergeOption) {
+            bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide();
+            
+            if (stagedData) {
+                // *** الإصلاح هنا: استدعاء smartMerge وتحديث الواجهة مباشرة ***
+                smartMerge(stagedData, mergeOption);
+                alert(`تم تنفيذ عملية ${mergeOption} بنجاح. تم تحديث ${db.length} صنف.`);
+            }
+            
+            // تنظيف البيانات المؤقتة
+            stagedData = null;
+            mergeContext = '';
+        }
+
+
+        function convertExcelDate(excelDate) {
+            if (typeof excelDate === 'string' && excelDate.includes('-')) {
+                return excelDate;
+            }
+            const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
+            return date.toISOString().split('T')[0];
         }
 
 
