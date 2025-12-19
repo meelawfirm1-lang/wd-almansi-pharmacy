@@ -253,6 +253,7 @@
         border-radius: 8px;
         margin: 10px auto;
         display: block;
+        object-fit: contain;
     }
     
     .ocr-text-preview {
@@ -482,11 +483,11 @@
             </div>
             <div class="modal-body pt-0">
                 <div class="ai-powered-badge">
-                    <i class="fas fa-key me-2"></i>مُفعّل بالمفتاح: K83296860988957
+                    <i class="fas fa-key me-2"></i>Active with Gemini
                 </div>
                 
                 <div class="alert alert-info">
-                    <i class="fas fa-brain me-2"></i>يقوم النظام بتحليل الفواتير باستخدام ذكاء اصطناعي متطور ودقيق
+                    <i class="fas fa-brain me-2"></i>يقوم النظام بتحليل الفواتير باستخدام ذكاء اصطناعي متطور ودقيق (Gemini)
                 </div>
                 
                 <div class="row g-3">
@@ -499,9 +500,11 @@
                         </div>
                         
                         <div id="filePreviewContainer" class="d-none-custom">
-                            <h6>معاينة الفاتورة:</h6>
-                            <img id="filePreview" class="file-preview" src="" alt="معاينة الفاتورة">
-                            <button onclick="clearInvoiceFile()" class="btn btn-sm btn-danger mt-2"><i class="fas fa-trash"></i> حذف الملف</button>
+                            <h6 class="text-center">معاينة الفاتورة:</h6>
+                            <img id="filePreview" class="file-preview shadow-sm" src="" alt="معاينة الفاتورة">
+                            <div class="text-center">
+                                <button onclick="clearInvoiceFile()" class="btn btn-sm btn-outline-danger mt-2 rounded-pill"><i class="fas fa-trash me-1"></i> حذف الملف</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -536,20 +539,20 @@
                 </div>
                 
                 <div id="extractedItems" class="mt-4">
-                    <h5 class="mb-3"><i class="fas fa-pills me-2"></i>الأدوية المستخرجة:</h5>
+                    <h5 class="mb-3 d-none-custom" id="extractedTitle"><i class="fas fa-pills me-2"></i>الأدوية المستخرجة:</h5>
                     <div id="invoiceItemsList"></div>
                 </div>
                 
                 <div class="mt-3 d-none-custom" id="invoiceSummary">
-                    <div class="alert alert-success">
+                    <div class="alert alert-success rounded-4">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="fas fa-file-invoice-dollar me-2"></i>
                                 <strong>ملخص الفاتورة:</strong>
                             </div>
                             <div>
-                                <span id="totalItemsCount">0</span> عنصر | 
-                                <span id="invoiceTotalAmount">0</span> SDG
+                                <span id="totalItemsCount" class="badge bg-white text-success me-2">0 عنصر</span>
+                                <span id="invoiceTotalAmount" class="fw-bold">0</span> SDG
                             </div>
                         </div>
                     </div>
@@ -560,7 +563,7 @@
                     <i class="fas fa-bolt me-2"></i>بدء المسح الذكي
                 </button>
                 <button onclick="processInvoiceToInventory()" id="processInvoiceBtn" class="btn btn-success w-100 rounded-pill py-2 fw-bold d-none-custom">
-                    <i class="fas fa-database me-2"></i>إضافة للمخزون والتقرير
+                    <i class="fas fa-database me-2"></i>إضافة للمخزون
                 </button>
             </div>
         </div>
@@ -606,10 +609,14 @@
     </button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
     // --- 1. System Setup ---
     const SYS_PASS = "123456";
-    const AI_API_KEY = "K83296860988957";
+    // ⚠️ استبدل هذا المفتاح بمفتاح Google API الخاص بك ليعمل النظام (يبدأ بـ AIza...)
+    const AI_API_KEY = "K83296860988957"; 
+    
     let db = JSON.parse(localStorage.getItem('wm_db_v23')) || [];
     let chartInstance = null;
     let exchangeRate = localStorage.getItem('wm_exchange_rate') || 3000;
@@ -618,15 +625,17 @@
     let extractedInvoiceItems = [];
     let currentInvoiceFile = null;
     let ocrWorker = null;
-    let invoicesHistory = JSON.parse(localStorage.getItem('wm_invoices')) || [];
+    let currentLang = 'ar';
 
-    // تحميل سعر الصرف عند بدء التشغيل
+    // PDF.js worker setup
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('exchangeRateInput').value = exchangeRate;
         refreshUI();
         addon_init();
         initOCRWorker();
-        console.log("✅ نظام ماسح الفواتير الذكي جاهز - المفتاح: " + AI_API_KEY);
+        console.log("✅ نظام ماسح الفواتير الذكي جاهز");
     });
 
     // --- 2. Authentication Logic ---
@@ -668,23 +677,35 @@
             (item.active && item.active.toLowerCase().includes(term))
         );
 
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="text-center text-muted mt-5"><i class="fas fa-box-open fa-3x mb-3"></i><p>لا توجد أصناف مطابقة</p></div>`;
+            return;
+        }
+
         filtered.forEach((item, index) => {
             const realIndex = db.indexOf(item);
             const daysLeft = Math.ceil((new Date(item.exp) - new Date()) / (1000*60*60*24));
             let statusIcon = '';
-            if(daysLeft < 0) statusIcon = '<i class="fas fa-skull text-danger" title="منتهي"></i>';
-            else if(daysLeft < 90) statusIcon = '<i class="fas fa-exclamation-triangle text-warning" title="قريب"></i>';
+            let cardClass = '';
+            
+            if(daysLeft < 0) {
+                statusIcon = '<i class="fas fa-skull text-danger ms-1" title="منتهي"></i>';
+                cardClass = 'border-danger border-end border-3';
+            } else if(daysLeft < 90) {
+                statusIcon = '<i class="fas fa-exclamation-triangle text-warning ms-1" title="قريب"></i>';
+                cardClass = 'border-warning border-end border-3';
+            }
 
             container.innerHTML += `
-                <div class="item-card" onclick="openEditModal(${realIndex})">
+                <div class="item-card ${cardClass}" onclick="openEditModal(${realIndex})">
                     <div>
                         <div class="fw-bold text-dark">${item.name} ${statusIcon}</div>
-                        <small class="text-muted">ينتهي: ${item.exp}</small>
-                        ${item.source ? `<small class="text-info d-block"><i class="fas fa-file-invoice"></i> ${item.source}</small>` : ''}
+                        <small class="text-muted d-block">ينتهي: ${item.exp}</small>
+                        ${item.source ? `<small class="text-info d-block" style="font-size:0.75rem"><i class="fas fa-file-invoice"></i> ${item.source}</small>` : ''}
                     </div>
                     <div class="text-end">
                         <span class="badge-qty">${item.qty}</span>
-                        <div class="small fw-bold text-success mt-1">${(item.price * item.qty).toLocaleString()} SDG</div>
+                        <div class="small fw-bold text-success mt-1">${Math.round(item.price * item.qty).toLocaleString()}</div>
                     </div>
                 </div>
             `;
@@ -736,9 +757,10 @@
         document.getElementById('inpExp').value = '';
         document.getElementById('inpActive').value = '';
         document.getElementById('profitRange').value = 20;
-        document.getElementById('profitValue').innerText = '20%';
+        calculateProfit();
         document.getElementById('btnDelete').classList.add('d-none');
-        new bootstrap.Modal(document.getElementById('itemModal')).show();
+        const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+        modal.show();
     }
 
     function openEditModal(index) {
@@ -746,418 +768,160 @@
         document.getElementById('editIndex').value = index;
         document.getElementById('inpName').value = item.name;
         document.getElementById('inpQty').value = item.qty;
-        document.getElementById('inpBuyPrice').value = item.buyPrice || item.price;
+        document.getElementById('inpBuyPrice').value = item.buyPrice || 0;
         document.getElementById('inpPrice').value = item.price;
         document.getElementById('inpExp').value = item.exp;
         document.getElementById('inpActive').value = item.active || '';
         
-        const calculatedProfit = item.buyPrice > 0 ? ((item.price / item.buyPrice) - 1) * 100 : 20;
-        document.getElementById('profitRange').value = Math.min(100, Math.max(1, Math.round(calculatedProfit)));
-        calculateProfit();
-        
+        // تقدير نسبة الربح إذا لم تكن مخزنة
+        if(item.buyPrice && item.price) {
+            let profit = Math.round(((item.price - item.buyPrice) / item.buyPrice) * 100);
+            if(profit < 0) profit = 0;
+            if(profit > 100) profit = 100;
+            document.getElementById('profitRange').value = profit;
+            document.getElementById('profitValue').innerText = profit + '%';
+        }
+
         document.getElementById('btnDelete').classList.remove('d-none');
-        new bootstrap.Modal(document.getElementById('itemModal')).show();
+        const modal = new bootstrap.Modal(document.getElementById('itemModal'));
+        modal.show();
     }
 
     function saveItem() {
         const idx = document.getElementById('editIndex').value;
+        const name = document.getElementById('inpName').value;
+        const qty = Number(document.getElementById('inpQty').value);
         const buyPrice = Number(document.getElementById('inpBuyPrice').value);
-        const sellPrice = Number(document.getElementById('inpPrice').value);
+        const price = Number(document.getElementById('inpPrice').value);
+        const exp = document.getElementById('inpExp').value;
+        const active = document.getElementById('inpActive').value;
 
-        const newItem = {
-            name: document.getElementById('inpName').value,
-            qty: Number(document.getElementById('inpQty').value),
-            buyPrice: buyPrice,
-            price: sellPrice,
-            exp: document.getElementById('inpExp').value,
-            active: document.getElementById('inpActive').value
-        };
+        if(!name || !qty || !price || !exp) {
+            alert('يرجى تعبئة الحقول الأساسية');
+            return;
+        }
 
-        if(!newItem.name || !newItem.price || !newItem.buyPrice) return alert('أكمل البيانات الأساسية (الاسم، الشراء، البيع)');
+        const newItem = { name, qty, buyPrice, price, exp, active, lastUpdated: new Date().toISOString() };
 
         if(idx === '') {
             db.push(newItem);
         } else {
-            db[idx] = newItem;
+            db[Number(idx)] = newItem;
         }
-        
-        localStorage.setItem('wm_db_v23', JSON.stringify(db));
-        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+
+        saveToLocal();
         refreshUI();
+        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
     }
 
     function deleteItem() {
         const idx = document.getElementById('editIndex').value;
-        if(idx !== '' && confirm('حذف الصنف؟')) {
-            db.splice(idx, 1);
-            localStorage.setItem('wm_db_v23', JSON.stringify(db));
-            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
+        if(idx !== '' && confirm('هل أنت متأكد من الحذف؟')) {
+            db.splice(Number(idx), 1);
+            saveToLocal();
             refreshUI();
+            bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
         }
     }
 
-    // --- 6. Data & Charts/Reports Tools ---
-    function openChartModal(type) {
-        new bootstrap.Modal(document.getElementById('chartModal')).show();
-        const ctx = document.getElementById('theChart').getContext('2d');
-        const titleEl = document.getElementById('chartTitle');
-        const valEl = document.getElementById('chartMainValue');
-        const listEl = document.getElementById('detailedList');
-        const headerEl = document.getElementById('reportHeader');
-        const footerEl = document.getElementById('reportFooter');
-        const exportBtn = document.getElementById('exportReportBtn');
-        
-        listEl.innerHTML = '';
-        headerEl.innerText = '';
-        footerEl.innerText = '';
-        exportBtn.classList.add('d-none');
-
-        if(chartInstance) chartInstance.destroy();
-
-        let config = { type: 'doughnut', data: {}, options: { maintainAspectRatio: false } };
-
-        if(type === 'items') {
-            titleEl.innerText = 'تقرير إجمالي الأصناف';
-            valEl.innerText = db.length.toLocaleString() + ' صنف';
-            headerEl.innerText = 'قائمة الأصناف المرقمة:';
-            
-            exportBtn.classList.remove('d-none');
-            
-            db.sort((a,b) => a.name.localeCompare(b.name, 'ar'));
-            
-            db.forEach((item, i) => {
-                listEl.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                        <div class="ms-2 me-auto">
-                            ${item.name}
-                            ${item.source ? `<small class="text-info">(${item.source})</small>` : ''}
-                        </div>
-                        <span class="badge bg-primary rounded-pill">${item.qty}</span>
-                    </li>
-                `;
-            });
-            footerEl.innerText = `إجمالي عدد الأصناف في المخزون: ${db.length}`;
-            
-            const cats = {};
-            db.forEach(i => cats[i.active || 'غير مصنف'] = (cats[i.active || 'غير مصنف']||0) + i.qty);
-            config.data = {
-                labels: Object.keys(cats),
-                datasets: [{ data: Object.values(cats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
-            };
-        
-        } else if (type === 'value') {
-            titleEl.innerText = 'تحليل القيمة المالية';
-            const totalSDG = db.reduce((a,b) => a + (b.price * b.qty), 0);
-            const totalUSD = totalSDG / exchangeRate;
-            
-            valEl.innerText = totalSDG.toLocaleString() + ' SDG';
-            headerEl.innerText = 'ملخص القيمة:';
-            
-            listEl.innerHTML = `
-                <li class="list-group-item d-flex justify-content-between">الإجمالي بالجنيه السوداني (SDG): <b>${totalSDG.toLocaleString()}</b></li>
-                <li class="list-group-item d-flex justify-content-between">الإجمالي بالدولار (USD): <b>${totalUSD.toFixed(2)}</b></li>
-                <li class="list-group-item d-flex justify-content-between">سعر الصرف: <b>${exchangeRate.toLocaleString()} SDG/USD</b></li>
-            `;
-            footerEl.innerText = `آخر تحديث: ${new Date().toLocaleDateString('ar-SA')}`;
-
-            const valueCats = {};
-            db.forEach(i => valueCats[i.active || 'غير مصنف'] = (valueCats[i.active || 'غير مصنف']||0) + (i.price * i.qty));
-            config.data = {
-                labels: Object.keys(valueCats),
-                datasets: [{ data: Object.values(valueCats), backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1'] }]
-            };
-
-        } else if (type === 'expiry') {
-            titleEl.innerText = 'تقرير الأصناف القريبة من الانتهاء';
-            const today = new Date();
-            const warnDate = new Date(); warnDate.setDate(today.getDate()+90);
-            
-            const expiredAndSoon = db.filter(i => new Date(i.exp) <= warnDate).sort((a,b) => new Date(a.exp) - new Date(b.exp));
-            
-            const expiredCount = expiredAndSoon.filter(i => new Date(i.exp) < today).length;
-            valEl.innerText = `${expiredAndSoon.length} صنف في خطر`;
-            headerEl.innerText = 'قائمة الأصناف (منتهي وقريب):';
-
-            expiredAndSoon.forEach((item) => {
-                const daysLeft = Math.ceil((new Date(item.exp) - today) / (1000*60*60*24));
-                const statusText = daysLeft < 0 ? 
-                    `<span class="text-danger fw-bold">منتهي منذ ${Math.abs(daysLeft)} يوم</span>` : 
-                    `<span class="text-warning fw-bold">متبقي ${daysLeft} يوم</span>`;
-
-                listEl.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div class="ms-2 me-auto">
-                            ${item.name} <small class="text-muted">(${item.exp})</small>
-                        </div>
-                        ${statusText}
-                    </li>
-                `;
-            });
-            footerEl.innerText = `عدد الأصناف المنتهية: ${expiredCount}. يرجى اتخاذ الإجراء اللازم.`;
-
-            const soonCount = expiredAndSoon.length - expiredCount;
-            const safe = db.length - expiredAndSoon.length;
-            
-            config.data = {
-                labels: ['منتهي', 'قريب', 'سليم'],
-                datasets: [{ data: [expiredCount, soonCount, safe], backgroundColor: ['#dc3545', '#ffc107', '#198754'] }]
-            };
-
-        } else if (type === 'stock') {
-            titleEl.innerText = 'تقرير الأصناف الناقصة (أقل من 5)';
-            const lowStock = db.filter(i => i.qty < 5).sort((a,b) => a.qty - b.qty);
-            valEl.innerText = `${lowStock.length} صنف يحتاج شراء`;
-            headerEl.innerText = 'قائمة الأصناف الناقصة:';
-
-            lowStock.forEach((item) => {
-                listEl.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <div class="ms-2 me-auto">${item.name}</div>
-                        <span class="badge bg-danger rounded-pill">${item.qty} متبقي</span>
-                    </li>
-                `;
-            });
-            footerEl.innerText = `عدد الأصناف التي تحتاج إعادة طلب: ${lowStock.length}.`;
-            
-            const activeLow = {};
-            lowStock.forEach(i => activeLow[i.active || 'غير مصنف'] = (activeLow[i.active || 'غير مصنف']||0) + i.qty);
-            config.data = {
-                labels: Object.keys(activeLow),
-                datasets: [{ data: Object.values(activeLow), backgroundColor: ['#ffc107', '#dc3545', '#0d6efd', '#198754'] }]
-            };
-        }
-
-        chartInstance = new Chart(ctx, config);
-    }
-
-    function exportDetailedReport() {
-        const exportData = db.map(item => ({
-            name: item.name,
-            qty: item.qty,
-            price: item.price,
-            exp: item.exp,
-            active: item.active,
-            buyPrice: item.buyPrice || 0,
-            source: item.source || ''
-        }));
-        
-        const ws = XLSX.utils.json_to_sheet(exportData, { 
-            header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice', 'source'] 
-        });
-        
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Inventory_Export");
-        XLSX.writeFile(wb, "تقرير_المخزون_" + new Date().toISOString().slice(0,10) + ".xlsx");
-
-        alert("تم تصدير التقرير بنجاح! يمكن استخدام هذا الملف للاستيراد مرة أخرى.");
-    }
-
-    // --- 7. Data Backup/Restore/Import ---
-    function backupData() {
-        const dataStr = JSON.stringify(db);
-        const blob = new Blob([dataStr], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "inventory_backup_" + new Date().toISOString().slice(0,10) + ".json";
-        a.click();
-    }
-    
-    function smartMerge(newData, mergeType) {
-        let finalDb = db;
-        
-        if(mergeType === 'replace') {
-            finalDb = newData;
-        } else if (mergeType === 'merge') {
-            newData.forEach(newItem => {
-                const existingIndex = finalDb.findIndex(item => item.name === newItem.name);
-                if (existingIndex !== -1) {
-                    finalDb[existingIndex].qty = (finalDb[existingIndex].qty || 0) + (newItem.qty || 0);
-                    finalDb[existingIndex].price = newItem.price || finalDb[existingIndex].price;
-                    finalDb[existingIndex].buyPrice = newItem.buyPrice || finalDb[existingIndex].buyPrice;
-                    if (new Date(newItem.exp) > new Date(finalDb[existingIndex].exp)) {
-                        finalDb[existingIndex].exp = newItem.exp;
-                    }
-                } else {
-                    finalDb.push(newItem);
-                }
-            });
-        } else if (mergeType === 'add_new') {
-            finalDb = finalDb.concat(newData);
-        }
-
-        db = finalDb;
+    function saveToLocal() {
         localStorage.setItem('wm_db_v23', JSON.stringify(db));
-        refreshUI();
     }
 
-    function handleRestoreFile(input) {
-        const file = input.files[0];
-        if(!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const loaded = JSON.parse(e.target.result);
-                stagedData = loaded;
-                mergeContext = 'JSON';
-                
-                document.getElementById('mergeMessage').innerText = 'ملف النسخة الاحتياطية جاهز للاستعادة.';
-                document.getElementById('replaceBtn').style.display = 'block';
-                new bootstrap.Modal(document.getElementById('mergeModal')).show();
-
-            } catch(err) { alert('ملف JSON غير صالح'); }
-        };
-        reader.readAsText(file);
-    }
-    
-    function handleImportExcelFile(input) {
-        const file = input.files[0];
-        if(!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-
-                const json = XLSX.utils.sheet_to_json(worksheet, {
-                    header: ['name', 'qty', 'price', 'exp', 'active', 'buyPrice'],
-                    raw: false
-                });
-
-                const loadedData = json.map(item => {
-                    let expDate = item.exp;
-                    if (expDate) {
-                        if (!isNaN(parseFloat(expDate)) && isFinite(expDate)) {
-                            expDate = convertExcelDate(parseFloat(expDate));
-                        } else {
-                            expDate = String(expDate).split('T')[0];
-                        }
-                    }
-
-                    return {
-                        name: item.name || 'Unknown',
-                        qty: Number(item.qty) || 0,
-                        price: Number(item.price) || 0,
-                        buyPrice: Number(item.buyPrice) || 0,
-                        exp: expDate || 'غير معروف',
-                        active: item.active || ''
-                    };
-                }).filter(item => item.name !== 'Unknown' && item.qty > 0);
-
-                if (loadedData.length === 0) {
-                    throw new Error('لم يتم العثور على أي بيانات صالحة بعد التحويل. تأكد من تسمية الأعمدة بشكل دقيق.');
-                }
-                
-                stagedData = loadedData;
-                mergeContext = 'Excel';
-                
-                document.getElementById('mergeMessage').innerText = `تم تحميل ${loadedData.length} صنف بنجاح من ملف Excel.`;
-                document.getElementById('replaceBtn').style.display = 'block';
-                new bootstrap.Modal(document.getElementById('mergeModal')).show();
-
-            } catch(err) {
-                console.error(err);
-                alert('فشل في استيراد ملف Excel. تأكد من أن الأعمدة مرتبة ومسمّاة هكذا: name, qty, price, exp, active, buyPrice.');
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-    
-    function processMerge(mergeOption) {
-        bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide();
-        
-        if (stagedData) {
-            smartMerge(stagedData, mergeOption);
-            alert(`تم تنفيذ عملية ${mergeOption} بنجاح. تم تحديث ${db.length} صنف.`);
-        }
-        
-        stagedData = null;
-        mergeContext = '';
-    }
-
-    function convertExcelDate(excelDate) {
-        if (typeof excelDate === 'string' && excelDate.includes('-')) {
-            return excelDate;
-        }
-        const date = new Date(Math.round((excelDate - 25569) * 86400 * 1000));
-        return date.toISOString().split('T')[0];
-    }
-
-    // --- 8. AI OCR ---
-    async function handleOCR(input) {
-        if(!input.files[0]) return;
-        document.getElementById('ocrLoading').classList.remove('d-none');
-        try {
-            const res = await Tesseract.recognize(input.files[0], 'eng+ara');
-            const text = res.data.text;
-            const lines = text.split('\n').filter(l => l.trim().length > 3);
-            if(lines.length > 0) document.getElementById('inpName').value = lines[0];
-            alert('تم استخراج النص، يرجى المراجعة وتعبئة الأرقام.');
-        } catch(e) { alert('فشل التعرف على الصورة'); }
-        document.getElementById('ocrLoading').classList.add('d-none');
-    }
-
-    // --- 9. دوال مسح الفاتورة الذكية مع الذكاء الاصطناعي ---
+    // --- 6. OCR & Tesseract (Single Item) ---
     async function initOCRWorker() {
-        try {
-            ocrWorker = await Tesseract.createWorker('eng+ara', 1, {
-                logger: m => console.log('OCR Worker:', m),
-                errorHandler: err => console.error('OCR Error:', err)
-            });
-            console.log("✅ OCR Worker جاهز مع المفتاح: " + AI_API_KEY);
-        } catch (error) {
-            console.error('Failed to initialize OCR worker:', error);
+        ocrWorker = await Tesseract.createWorker();
+        await ocrWorker.loadLanguage('eng+ara');
+        await ocrWorker.initialize('eng+ara');
+    }
+
+    async function handleOCR(input) {
+        if(input.files && input.files[0]) {
+            document.getElementById('ocrLoading').classList.remove('d-none');
+            const file = input.files[0];
+            const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: m => console.log(m) });
+            
+            // Simple logic to guess expiration date
+            const expMatch = text.match(/(\d{2}\/\d{4})|(\d{2}-\d{4})|(\d{4}-\d{2}-\d{2})/);
+            if(expMatch) {
+                // Formatting needed... simple alert for now
+                alert('تم اكتشاف تاريخ محتمل: ' + expMatch[0]);
+            }
+            
+            document.getElementById('inpName').value = text.split('\n')[0].substring(0, 20); // Guess name
+            document.getElementById('ocrLoading').classList.add('d-none');
         }
     }
 
+    // --- 7. INVOICE SCANNING (GEMINI AI UPGRADE) ---
+    
     function openScanInvoiceModal() {
-        document.getElementById('invoiceNumber').value = 'FTR-' + Date.now().toString().slice(-8);
-        document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('supplierName').value = '';
+        // Reset modal state
+        currentInvoiceFile = null;
+        extractedInvoiceItems = [];
+        document.getElementById('invoiceFileInput').value = '';
+        document.getElementById('filePreview').src = '';
+        document.getElementById('filePreviewContainer').classList.add('d-none-custom');
+        document.getElementById('ocrTextContent').innerText = '';
         document.getElementById('ocrTextPreview').classList.add('d-none-custom');
+        document.getElementById('invoiceItemsList').innerHTML = '';
+        document.getElementById('extractedTitle').classList.add('d-none-custom');
         document.getElementById('invoiceSummary').classList.add('d-none-custom');
         document.getElementById('processInvoiceBtn').classList.add('d-none-custom');
-        document.getElementById('invoiceItemsList').innerHTML = '';
-        extractedInvoiceItems = [];
-        currentInvoiceFile = null;
-        
-        document.getElementById('filePreviewContainer').classList.add('d-none-custom');
-        document.getElementById('filePreview').src = '';
+        document.getElementById('invoiceNumber').value = '';
+        document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('supplierName').value = '';
         
         new bootstrap.Modal(document.getElementById('scanInvoiceModal')).show();
     }
 
     function handleInvoiceFileSelect(input) {
-        if (!input.files[0]) return;
-        
-        currentInvoiceFile = input.files[0];
-        
-        if (currentInvoiceFile.type.startsWith('image/')) {
+        if (input.files && input.files[0]) {
+            currentInvoiceFile = input.files[0];
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('filePreview').src = e.target.result;
+            
+            if (currentInvoiceFile.type === 'application/pdf') {
+                document.getElementById('filePreview').src = 'https://cdn-icons-png.flaticon.com/512/337/337946.png'; // PDF Icon
                 document.getElementById('filePreviewContainer').classList.remove('d-none-custom');
-            };
-            reader.readAsDataURL(currentInvoiceFile);
-        } else if (currentInvoiceFile.type === 'application/pdf') {
-            document.getElementById('filePreview').src = 'https://cdn-icons-png.flaticon.com/512/337/337946.png';
-            document.getElementById('filePreviewContainer').classList.remove('d-none-custom');
+            } else {
+                reader.onload = function(e) {
+                    document.getElementById('filePreview').src = e.target.result;
+                    document.getElementById('filePreviewContainer').classList.remove('d-none-custom');
+                };
+                reader.readAsDataURL(currentInvoiceFile);
+            }
         }
-        
-        document.getElementById('ocrTextPreview').classList.add('d-none-custom');
-        document.getElementById('invoiceSummary').classList.add('d-none-custom');
-        document.getElementById('processInvoiceBtn').classList.add('d-none-custom');
     }
 
     function clearInvoiceFile() {
         currentInvoiceFile = null;
-        document.getElementById('filePreviewContainer').classList.add('d-none-custom');
-        document.getElementById('filePreview').src = '';
         document.getElementById('invoiceFileInput').value = '';
+        document.getElementById('filePreviewContainer').classList.add('d-none-custom');
+    }
+
+    // Helper: Convert File to Base64
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    // Helper: Convert PDF first page to Image Base64
+    async function convertPdfToImage(pdfDataUrl) {
+        const loadingTask = pdfjsLib.getDocument(pdfDataUrl);
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1); // Get first page only
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        return canvas.toDataURL('image/jpeg');
     }
 
     async function startAIScanProcessing() {
@@ -1166,530 +930,360 @@
             return;
         }
 
-        const enableAI = document.getElementById('enableAIAnalysis').checked;
+        const overlay = document.getElementById('invoiceProcessingOverlay');
+        const progressBar = document.getElementById('processingProgress');
+        const statusText = document.getElementById('processingStatus');
         
-        document.getElementById('invoiceProcessingOverlay').classList.remove('d-none-custom');
-        document.getElementById('processingStatus').textContent = enableAI ? 
-            'جاري تحليل الفاتورة باستخدام الذكاء الاصطناعي...' : 
-            'جاري معالجة الفاتورة...';
-        document.getElementById('processingProgress').style.width = '10%';
+        overlay.classList.remove('d-none-custom');
+        progressBar.style.width = '10%';
+        statusText.innerText = 'تحضير الملف...';
 
         try {
-            let extractedText = '';
+            // 1. Prepare Image Data
+            let base64Data = await fileToBase64(currentInvoiceFile);
             
             if (currentInvoiceFile.type === 'application/pdf') {
-                extractedText = await processPDFFile(currentInvoiceFile);
-            } else {
-                extractedText = await processImageFile(currentInvoiceFile);
+                progressBar.style.width = '30%';
+                statusText.innerText = 'تحويل PDF إلى صورة...';
+                base64Data = await convertPdfToImage(base64Data);
             }
             
-            document.getElementById('processingProgress').style.width = '60%';
-            document.getElementById('processingStatus').textContent = 'جاري تحليل النص وتحديد الأدوية...';
+            // Clean Base64 string (remove data:image/jpeg;base64,)
+            const base64Content = base64Data.split(',')[1];
+
+            // 2. Prepare Gemini Request
+            progressBar.style.width = '50%';
+            statusText.innerText = 'الاتصال بـ Gemini AI...';
+
+            const prompt = `
+            You are an expert pharmacist assistant. Analyze this pharmacy invoice image carefully.
+            Extract the data into a valid JSON object.
             
-            document.getElementById('ocrTextContent').textContent = extractedText.substring(0, 2000) + (extractedText.length > 2000 ? '...' : '');
-            document.getElementById('ocrTextPreview').classList.remove('d-none-custom');
+            Required JSON Structure:
+            {
+                "invoice_number": "string or empty",
+                "invoice_date": "YYYY-MM-DD or empty",
+                "supplier_name": "string or empty",
+                "items": [
+                    {
+                        "name": "Trade Name of the medicine",
+                        "scientific_name": "Generic Name (if visible, else empty)",
+                        "qty": Number,
+                        "unit_price": Number,
+                        "expiry_date": "YYYY-MM-DD (if found, else null)"
+                    }
+                ]
+            }
             
-            const items = enableAI ? 
-                await extractMedicinesWithAdvancedAI(extractedText) : 
-                await extractMedicinesBasic(extractedText);
+            Rules:
+            1. If price is total, calculate unit price.
+            2. Ignore non-medicine items if possible.
+            3. Return ONLY the JSON object, no markdown formatting.
+            `;
+
+            // 3. Call Gemini API
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${AI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: "image/jpeg", data: base64Content } }
+                        ]
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error?.message || 'API Error');
+            }
+
+            progressBar.style.width = '80%';
+            statusText.innerText = 'تحليل البيانات المستخرجة...';
+
+            const result = await response.json();
+            const textResponse = result.candidates[0].content.parts[0].text;
             
-            document.getElementById('processingProgress').style.width = '90%';
-            document.getElementById('processingStatus').textContent = 'جاري عرض النتائج...';
+            // Clean Markdown if Gemini sends it
+            const cleanJson = textResponse.replace(/```json|```/g, '').trim();
+            const data = JSON.parse(cleanJson);
+
+            // 4. Update UI with Data
+            document.getElementById('invoiceNumber').value = data.invoice_number || '';
+            if(data.invoice_date) document.getElementById('invoiceDate').value = data.invoice_date;
+            document.getElementById('supplierName').value = data.supplier_name || '';
             
-            displayInvoiceItemsWithAI(items);
+            extractedInvoiceItems = data.items || [];
+            renderExtractedItems();
             
-            document.getElementById('processingProgress').style.width = '100%';
+            progressBar.style.width = '100%';
+            statusText.innerText = 'تمت المعالجة بنجاح!';
             
             setTimeout(() => {
-                document.getElementById('invoiceProcessingOverlay').classList.add('d-none-custom');
-                document.getElementById('processingProgress').style.width = '0%';
-            }, 500);
-            
+                overlay.classList.add('d-none-custom');
+                document.getElementById('extractedTitle').classList.remove('d-none-custom');
+                document.getElementById('invoiceSummary').classList.remove('d-none-custom');
+                document.getElementById('processInvoiceBtn').classList.remove('d-none-custom');
+            }, 800);
+
         } catch (error) {
-            console.error('خطأ في معالجة الفاتورة:', error);
-            alert('فشل قراءة الفاتورة. تأكد من جودة الصورة أو حاول مرة أخرى.');
-            document.getElementById('invoiceProcessingOverlay').classList.add('d-none-custom');
+            console.error(error);
+            overlay.classList.add('d-none-custom');
+            alert('حدث خطأ أثناء المعالجة: ' + error.message + '\nتأكد من صلاحية مفتاح API.');
         }
     }
 
-    async function processPDFFile(file) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-        
-        let fullText = '';
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += `=== صفحة ${i} ===\n` + pageText + '\n\n';
-            
-            const progress = Math.min(10 + (i / pdf.numPages * 50), 60);
-            document.getElementById('processingProgress').style.width = `${progress}%`;
-            document.getElementById('processingDetails').textContent = `جاري قراءة صفحة ${i} من ${pdf.numPages}`;
-        }
-        
-        return fullText;
-    }
-
-    async function processImageFile(file) {
-        if (!ocrWorker) {
-            await initOCRWorker();
-        }
-        
-        document.getElementById('processingDetails').textContent = 'جاري التعرف على النص باستخدام الذكاء الاصطناعي...';
-        
-        try {
-            document.getElementById('processingProgress').style.width = '40%';
-            const result = await ocrWorker.recognize(file);
-            return result.data.text;
-        } catch (error) {
-            const result = await Tesseract.recognize(file, 'eng+ara');
-            return result.data.text;
-        }
-    }
-
-    // استخراج الأدوية باستخدام ذكاء اصطناعي متقدم
-    async function extractMedicinesWithAdvancedAI(text) {
-        console.log("🔍 بدء استخراج الأدوية باستخدام الذكاء الاصطناعي...");
-        
-        const items = [];
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
-        
-        // قواميس متقدمة
-        const medicineKeywords = [
-            'دواء', 'علاج', 'كبسولة', 'حبة', 'شراب', 'مرهم', 'حقنة', 'أقراص', 'قرص',
-            'مضاد', 'مضادة', 'مضادات', 'مسكن', 'مسكنات', 'مضاد حيوي', 'أنتيبيوتيك',
-            'حبوب', 'شراب', 'قطرة', 'كريم', 'لوشن', 'بخاخ', 'تحاميل', 'لبوس',
-            'أمبول', 'أمبولات', 'فيل', 'أقلام', 'بخاخة', 'سبراي',
-            'باراسيتامول', 'بنادول', 'أدول', 'أسبيرين', 'ايبوبروفين', 'فولتارين',
-            'أموكسيسيلين', 'سيفالكسين', 'أزيثروميسين', 'كلاريثروميسين'
-        ];
-        
-        const currencyKeywords = ['جنيه', 'ريال', 'دولار', 'يورو', 'ليرة', 'دينار', 'SDG', 'USD', 'SAR'];
-        const quantityKeywords = ['علبة', 'عبوة', 'كرتون', 'شريط', 'حبة', 'قرص', 'كبسولة', 'أمبول'];
-        
-        let currentMedicine = null;
-        
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            const lineLower = line.toLowerCase();
-            
-            // البحث عن أنماط متقدمة
-            const patterns = [
-                // النمط: اسم - كمية - سعر
-                /(.+?)\s+(\d+)\s+([\d,\.]+)\s*(?:جنيه|ريال|دولار|SDG|USD)?$/,
-                // النمط: كمية x اسم = سعر
-                /(\d+)\s*x\s*(.+?)\s*=\s*([\d,\.]+)/i,
-                // النمط: اسم بسعر
-                /(.+?)\s+([\d,\.]+)\s*(?:جنيه|ريال|دولار)/,
-                // النمط: اسم (كمية) بسعر
-                /(.+?)\s*\((\d+)\)\s+([\d,\.]+)/,
-                // النمط: إجمالي أو مجموع
-                /(?:إجمالي|مجموع|المجموع)\s*:\s*([\d,\.]+)/i
-            ];
-            
-            let matchFound = false;
-            
-            for (const pattern of patterns) {
-                const match = line.match(pattern);
-                if (match) {
-                    let name = '', qty = 1, price = 0, confidence = 'medium';
-                    
-                    if (pattern === patterns[0]) {
-                        name = match[1].trim();
-                        qty = parseInt(match[2].replace(/,/g, '')) || 1;
-                        price = parseFloat(match[3].replace(/,/g, '')) || 0;
-                        confidence = 'high';
-                    } else if (pattern === patterns[1]) {
-                        qty = parseInt(match[1].replace(/,/g, '')) || 1;
-                        name = match[2].trim();
-                        price = parseFloat(match[3].replace(/,/g, '')) || 0;
-                        confidence = 'high';
-                    } else if (pattern === patterns[2]) {
-                        name = match[1].trim();
-                        price = parseFloat(match[2].replace(/,/g, '')) || 0;
-                        confidence = 'medium';
-                    } else if (pattern === patterns[3]) {
-                        name = match[1].trim();
-                        qty = parseInt(match[2].replace(/,/g, '')) || 1;
-                        price = parseFloat(match[3].replace(/,/g, '')) || 0;
-                        confidence = 'high';
-                    }
-                    
-                    // تصفية وتحسين
-                    if (isValidMedicineName(name)) {
-                        name = cleanMedicineName(name);
-                        const buyPrice = price > 0 ? price * 0.8 : 0;
-                        
-                        items.push({
-                            name: name,
-                            qty: qty,
-                            price: price,
-                            buyPrice: buyPrice,
-                            exp: calculateExpiryDate(),
-                            active: extractActiveIngredient(name),
-                            confidence: confidence,
-                            line: line,
-                            source: 'AI_Scanner'
-                        });
-                        
-                        matchFound = true;
-                        break;
-                    }
-                }
-            }
-            
-            // إذا لم يتم العثور على نمط، تحقق مما إذا كان السطر يحتوي على دواء
-            if (!matchFound && containsMedicineKeyword(lineLower, medicineKeywords)) {
-                const price = extractPriceFromLine(line);
-                const qty = extractQuantityFromLine(line);
-                
-                items.push({
-                    name: cleanMedicineName(line),
-                    qty: qty,
-                    price: price,
-                    buyPrice: price > 0 ? price * 0.8 : 0,
-                    exp: calculateExpiryDate(),
-                    active: extractActiveIngredient(line),
-                    confidence: 'low',
-                    line: line,
-                    source: 'AI_Scanner'
-                });
-            }
-        }
-        
-        // دمج العناصر المتشابهة
-        return mergeSimilarItems(items);
-    }
-
-    function extractMedicinesBasic(text) {
-        const items = [];
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
-        
-        for (const line of lines) {
-            const patterns = [
-                /(.+?)\s+(\d+)\s+([\d,\.]+)/,
-                /(\d+)\s+(.+?)\s+([\d,\.]+)/,
-                /(.+?)\s+x\s*(\d+)\s*=\s*([\d,\.]+)/i
-            ];
-            
-            for (const pattern of patterns) {
-                const match = line.match(pattern);
-                if (match) {
-                    let name, qty, price;
-                    
-                    if (pattern === patterns[0]) {
-                        name = match[1].trim();
-                        qty = parseInt(match[2]) || 1;
-                        price = parseFloat(match[3].replace(',', '')) || 0;
-                    } else if (pattern === patterns[1]) {
-                        qty = parseInt(match[1]) || 1;
-                        name = match[2].trim();
-                        price = parseFloat(match[3].replace(',', '')) || 0;
-                    } else {
-                        name = match[1].trim();
-                        qty = parseInt(match[2]) || 1;
-                        price = parseFloat(match[3].replace(',', '')) || 0;
-                    }
-                    
-                    if (name.length > 2 && price > 0) {
-                        items.push({
-                            name: name,
-                            qty: qty,
-                            price: price,
-                            buyPrice: price * 0.8,
-                            exp: calculateExpiryDate(),
-                            active: '',
-                            confidence: 'medium',
-                            line: line,
-                            source: 'Basic_Scanner'
-                        });
-                        break;
-                    }
-                }
-            }
-        }
-        
-        return items;
-    }
-
-    // دوال مساعدة للذكاء الاصطناعي
-    function isValidMedicineName(name) {
-        if (name.length < 3) return false;
-        if (/^\d+$/.test(name)) return false;
-        if (name.includes('إجمالي') || name.includes('مجموع') || name.includes('المجموع')) return false;
-        if (name.includes('جنيه') || name.includes('ريال') || name.includes('دولار')) return false;
-        return true;
-    }
-
-    function cleanMedicineName(name) {
-        return name
-            .replace(/[^\w\u0600-\u06FF\s\-\.\(\)]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .replace(/^\d+\s*[-\.]\s*/, '') // إزالة الأرقام في البداية
-            .replace(/\s*\d+$/, ''); // إزالة الأرقام في النهاية
-    }
-
-    function containsMedicineKeyword(text, keywords) {
-        return keywords.some(keyword => text.includes(keyword));
-    }
-
-    function extractPriceFromLine(line) {
-        const priceMatch = line.match(/([\d,\.]+)\s*(?:جنيه|ريال|دولار|SDG|USD)/);
-        if (priceMatch) {
-            return parseFloat(priceMatch[1].replace(',', ''));
-        }
-        
-        const numberMatch = line.match(/(\d+[\d,\.]*)/g);
-        if (numberMatch && numberMatch.length > 0) {
-            const lastNumber = numberMatch[numberMatch.length - 1];
-            return parseFloat(lastNumber.replace(',', ''));
-        }
-        
-        return 0;
-    }
-
-    function extractQuantityFromLine(line) {
-        const qtyMatch = line.match(/(\d+)\s*(?:علبة|عبوة|كرتون|شريط|حبة|قرص)/);
-        if (qtyMatch) {
-            return parseInt(qtyMatch[1]);
-        }
-        
-        const numberMatch = line.match(/\b(\d+)\b/);
-        return numberMatch ? parseInt(numberMatch[1]) : 1;
-    }
-
-    function calculateExpiryDate() {
-        const date = new Date();
-        date.setFullYear(date.getFullYear() + 1); // سنة من الآن
-        return date.toISOString().split('T')[0];
-    }
-
-    function extractActiveIngredient(name) {
-        const commonIngredients = [
-            'باراسيتامول', 'أموكسيسيلين', 'سيفالكسين', 'أزيثروميسين', 'كلاريثروميسين',
-            'ايبوبروفين', 'ديكلوفيناك', 'ميتفورمين', 'غليبنكلاميد', 'أتورفاستاتين',
-            'لوسارتان', 'أملوديبين', 'هيدروكلوروثيازيد', 'سيرترالين', 'فلوكسيتين'
-        ];
-        
-        for (const ingredient of commonIngredients) {
-            if (name.includes(ingredient)) {
-                return ingredient;
-            }
-        }
-        
-        return '';
-    }
-
-    function mergeSimilarItems(items) {
-        const merged = [];
-        const seen = new Map();
-        
-        for (const item of items) {
-            const key = item.name.toLowerCase().replace(/\s+/g, ' ');
-            if (seen.has(key)) {
-                const existing = seen.get(key);
-                existing.qty += item.qty;
-                if (item.price > existing.price) existing.price = item.price;
-                if (item.confidence === 'high') existing.confidence = 'high';
-            } else {
-                seen.set(key, {...item});
-                merged.push({...item});
-            }
-        }
-        
-        return merged.filter(item => item.confidence !== 'low' || merged.length <= 10);
-    }
-
-    function displayInvoiceItemsWithAI(items) {
-        const container = document.getElementById('invoiceItemsList');
-        container.innerHTML = '';
-        
-        if (items.length === 0) {
-            container.innerHTML = `
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> لم يتم العثور على أدوية في الفاتورة.
-                    <button class="btn btn-sm btn-primary mt-2" onclick="retryWithManualMode()">المحاولة يدوياً</button>
-                </div>
-            `;
-            return;
-        }
-        
+    function renderExtractedItems() {
+        const list = document.getElementById('invoiceItemsList');
+        list.innerHTML = '';
+        let totalQty = 0;
         let totalAmount = 0;
-        items.forEach((item, index) => {
-            const itemTotal = item.qty * (item.price || 0);
-            totalAmount += itemTotal;
-            
-            const confidenceClass = `confidence-${item.confidence}`;
-            const confidenceText = item.confidence === 'high' ? 'عالية' : 
-                                 item.confidence === 'medium' ? 'متوسطة' : 'منخفضة';
-            
-            const itemHtml = `
-                <div class="invoice-item" id="invoiceItem-${index}">
-                    <div class="invoice-item-header">
-                        <div>
-                            <h6 class="fw-bold mb-1">${item.name}</h6>
-                            <small class="text-muted">${item.active ? `(${item.active}) • ` : ''}${item.line.substring(0, 40)}${item.line.length > 40 ? '...' : ''}</small>
-                        </div>
-                        <div class="invoice-item-actions">
-                            <span class="confidence-badge ${confidenceClass}">
-                                <i class="fas fa-${item.confidence === 'high' ? 'check-circle' : item.confidence === 'medium' ? 'exclamation-circle' : 'question-circle'} me-1"></i>
-                                ${confidenceText}
-                            </span>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeInvoiceItem(${index})" title="حذف">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-3">
-                            <label class="small">الكمية</label>
-                            <input type="number" class="form-control form-control-sm" value="${item.qty}" 
-                                   onchange="updateInvoiceItem(${index}, 'qty', this.value)" min="1">
-                        </div>
-                        <div class="col-4">
-                            <label class="small">سعر الشراء</label>
-                            <input type="number" class="form-control form-control-sm" value="${item.buyPrice.toFixed(2)}" 
-                                   onchange="updateInvoiceItem(${index}, 'buyPrice', this.value)" step="0.01">
-                        </div>
-                        <div class="col-5">
-                            <label class="small">سعر البيع</label>
-                            <input type="number" class="form-control form-control-sm" value="${item.price.toFixed(2)}" 
-                                   onchange="updateInvoiceItem(${index}, 'price', this.value)" step="0.01">
-                        </div>
-                    </div>
-                    <div class="mt-2 d-flex justify-content-between">
-                        <small class="text-success fw-bold">الإجمالي: ${itemTotal.toLocaleString()} SDG</small>
-                        <small class="text-muted">الربح: ${((item.price - item.buyPrice) * item.qty).toLocaleString()} SDG</small>
-                    </div>
+
+        extractedInvoiceItems.forEach((item, index) => {
+            const lineTotal = item.qty * item.unit_price;
+            totalQty += item.qty;
+            totalAmount += lineTotal;
+
+            const div = document.createElement('div');
+            div.className = 'invoice-item';
+            div.innerHTML = `
+                <div class="invoice-item-header">
+                    <strong>${item.name}</strong>
+                    <span class="badge bg-secondary">${item.qty} x ${item.unit_price}</span>
+                </div>
+                <div class="small text-muted mb-2">
+                    ${item.scientific_name ? `<i>${item.scientific_name}</i> | ` : ''}
+                    EXP: ${item.expiry_date || 'غير محدد'}
+                </div>
+                <div class="invoice-item-actions">
+                    <input type="number" class="form-control form-control-sm" value="${item.qty}" onchange="updateExtractedItem(${index}, 'qty', this.value)" placeholder="الكمية">
+                    <input type="number" class="form-control form-control-sm" value="${item.unit_price}" onchange="updateExtractedItem(${index}, 'unit_price', this.value)" placeholder="السعر">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeExtractedItem(${index})"><i class="fas fa-times"></i></button>
                 </div>
             `;
-            
-            container.innerHTML += itemHtml;
+            list.appendChild(div);
         });
-        
-        extractedInvoiceItems = items;
-        
-        document.getElementById('invoiceSummary').classList.remove('d-none-custom');
-        document.getElementById('totalItemsCount').textContent = items.length;
-        document.getElementById('invoiceTotalAmount').textContent = totalAmount.toLocaleString();
-        
-        document.getElementById('processInvoiceBtn').classList.remove('d-none-custom');
+
+        document.getElementById('totalItemsCount').innerText = totalQty + ' عنصر';
+        document.getElementById('invoiceTotalAmount').innerText = Math.round(totalAmount).toLocaleString();
     }
 
-    function retryWithManualMode() {
-        document.getElementById('enableAIAnalysis').checked = false;
-        startAIScanProcessing();
+    function updateExtractedItem(index, field, value) {
+        extractedInvoiceItems[index][field] = Number(value);
+        renderExtractedItems();
     }
 
-    function updateInvoiceItem(index, field, value) {
-        if (extractedInvoiceItems[index]) {
-            if (field === 'qty') {
-                extractedInvoiceItems[index][field] = parseInt(value) || 1;
-            } else if (field === 'price' || field === 'buyPrice') {
-                extractedInvoiceItems[index][field] = parseFloat(value) || 0;
-            }
-            
-            displayInvoiceItemsWithAI(extractedInvoiceItems);
-        }
-    }
-
-    function removeInvoiceItem(index) {
-        if (confirm('هل تريد حذف هذا العنصر من الفاتورة؟')) {
-            extractedInvoiceItems.splice(index, 1);
-            displayInvoiceItemsWithAI(extractedInvoiceItems);
-        }
+    function removeExtractedItem(index) {
+        extractedInvoiceItems.splice(index, 1);
+        renderExtractedItems();
     }
 
     function processInvoiceToInventory() {
-        if (!extractedInvoiceItems || extractedInvoiceItems.length === 0) {
-            alert('لا توجد عناصر في الفاتورة');
+        if(extractedInvoiceItems.length === 0) {
+            alert('لا توجد عناصر للإضافة');
             return;
         }
-        
-        const invoiceNumber = document.getElementById('invoiceNumber').value;
-        const invoiceDate = document.getElementById('invoiceDate').value;
-        const supplierName = document.getElementById('supplierName').value;
-        
+
+        const supplier = document.getElementById('supplierName').value || 'فاتورة مستوردة';
+        const invNum = document.getElementById('invoiceNumber').value;
+        const sourceLabel = invNum ? `فاتورة ${invNum} - ${supplier}` : supplier;
+
         let addedCount = 0;
-        let updatedCount = 0;
-        let totalValue = 0;
-        
         extractedInvoiceItems.forEach(item => {
-            if (item.name && item.qty > 0) {
-                const existingIndex = db.findIndex(i => 
-                    i.name.toLowerCase().includes(item.name.toLowerCase()) ||
-                    item.name.toLowerCase().includes(i.name.toLowerCase())
-                );
-                
-                if (existingIndex !== -1) {
-                    db[existingIndex].qty += item.qty;
-                    if (item.buyPrice > 0 && (!db[existingIndex].buyPrice || item.buyPrice > db[existingIndex].buyPrice)) {
-                        db[existingIndex].buyPrice = item.buyPrice;
-                    }
-                    db[existingIndex].source = `فاتورة ${invoiceNumber}`;
-                    updatedCount++;
-                } else {
-                    const newItem = {
-                        name: item.name,
-                        qty: item.qty,
-                        price: item.price > 0 ? item.price : (item.buyPrice * 1.25 || 1000),
-                        buyPrice: item.buyPrice,
-                        exp: item.exp,
-                        active: item.active || '',
-                        source: supplierName ? `فاتورة ${invoiceNumber} - ${supplierName}` : `فاتورة ${invoiceNumber}`,
-                        addedDate: new Date().toISOString().split('T')[0],
-                        invoiceDate: invoiceDate
-                    };
-                    db.push(newItem);
-                    addedCount++;
-                }
-                
-                totalValue += (item.price || item.buyPrice * 1.25) * item.qty;
-            }
+            db.push({
+                name: item.name,
+                qty: item.qty,
+                buyPrice: item.unit_price,
+                // Default profit margin logic
+                price: Math.round(item.unit_price * 1.2), 
+                exp: item.expiry_date || '2025-12-31', // Default exp if missing
+                active: item.scientific_name,
+                source: sourceLabel,
+                lastUpdated: new Date().toISOString()
+            });
+            addedCount++;
         });
-        
-        const invoice = {
-            id: invoiceNumber,
-            date: invoiceDate,
-            supplier: supplierName,
-            items: extractedInvoiceItems,
-            total: extractedInvoiceItems.reduce((sum, item) => sum + (item.qty * (item.price || item.buyPrice || 0)), 0),
-            addedToInventory: addedCount,
-            updatedInInventory: updatedCount,
-            timestamp: new Date().toISOString(),
-            aiProcessed: true
-        };
-        
-        invoicesHistory.unshift(invoice);
-        localStorage.setItem('wm_invoices', JSON.stringify(invoicesHistory));
-        
-        localStorage.setItem('wm_db_v23', JSON.stringify(db));
-        
-        bootstrap.Modal.getInstance(document.getElementById('scanInvoiceModal')).hide();
+
+        saveToLocal();
         refreshUI();
-        
-        const successMessage = `
-✅ تمت إضافة الفاتورة بنجاح باستخدام الذكاء الاصطناعي!
-
-📋 رقم الفاتورة: ${invoiceNumber}
-📦 العناصر المضافة: ${addedCount}
-🔄 العناصر المحدثة: ${updatedCount}
-💰 القيمة الإجمالية: ${totalValue.toLocaleString()} SDG
-📊 تم تحديث التقرير تلقائياً
-
-يمكنك عرض التقرير من خلال النقر على أيقونة الإحصائيات.
-        `;
-        
-        alert(successMessage);
-        
-        extractedInvoiceItems = [];
-        currentInvoiceFile = null;
+        bootstrap.Modal.getInstance(document.getElementById('scanInvoiceModal')).hide();
+        alert(`تمت إضافة ${addedCount} صنف للمخزون بنجاح!`);
     }
 
-    // --- 10. Add-ons Functions ---
+    // --- 8. Charts & Reports ---
+    function openChartModal(type) {
+        const ctx = document.getElementById('theChart').getContext('2d');
+        if(chartInstance) chartInstance.destroy();
+        
+        let label = '';
+        let labels = [];
+        let data = [];
+        let bgColor = '';
+        let listHTML = '';
+
+        if(type === 'items') {
+            label = 'توزيع الكميات';
+            document.getElementById('chartMainValue').innerText = db.length + ' صنف';
+            document.getElementById('reportHeader').innerText = 'الأصناف الأعلى كمية';
+            // Sort by qty desc
+            const sorted = [...db].sort((a,b) => b.qty - a.qty).slice(0, 5);
+            labels = sorted.map(i => i.name);
+            data = sorted.map(i => i.qty);
+            bgColor = '#198754';
+            sorted.forEach(i => listHTML += `<li class="list-group-item d-flex justify-content-between align-items-start"><div class="ms-2 me-auto"><div class="fw-bold">${i.name}</div></div><span class="badge bg-success rounded-pill">${i.qty}</span></li>`);
+        } else if(type === 'value') {
+            label = 'القيمة (SDG)';
+            const total = db.reduce((a,b) => a + (b.price * b.qty), 0);
+            document.getElementById('chartMainValue').innerText = formatMoney(total);
+            document.getElementById('reportHeader').innerText = 'الأعلى قيمة سوقية';
+            const sorted = [...db].sort((a,b) => (b.price*b.qty) - (a.price*a.qty)).slice(0, 5);
+            labels = sorted.map(i => i.name);
+            data = sorted.map(i => i.price * i.qty);
+            bgColor = '#0d6efd';
+             sorted.forEach(i => listHTML += `<li class="list-group-item d-flex justify-content-between align-items-start"><div class="ms-2 me-auto"><div class="fw-bold">${i.name}</div></div><span class="badge bg-primary rounded-pill">${formatMoney(i.price*i.qty)}</span></li>`);
+        } else if(type === 'expiry') {
+             label = 'الأيام المتبقية';
+             document.getElementById('chartMainValue').innerText = document.getElementById('statExp').innerText + ' خطر';
+             document.getElementById('reportHeader').innerText = 'أقرب الأصناف لانتهاء الصلاحية';
+             const sorted = [...db].filter(i => i.exp).sort((a,b) => new Date(a.exp) - new Date(b.exp)).slice(0, 5);
+             labels = sorted.map(i => i.name);
+             data = sorted.map(i => Math.ceil((new Date(i.exp) - new Date()) / (1000*60*60*24)));
+             bgColor = '#dc3545';
+             sorted.forEach(i => listHTML += `<li class="list-group-item d-flex justify-content-between align-items-start"><div class="ms-2 me-auto"><div class="fw-bold">${i.name}</div>ينتهي: ${i.exp}</div></li>`);
+        } else if(type === 'stock') {
+            label = 'الكمية';
+            document.getElementById('chartMainValue').innerText = document.getElementById('statLow').innerText + ' نواقص';
+            document.getElementById('reportHeader').innerText = 'أصناف شارفت على الانتهاء';
+            const sorted = [...db].filter(i => i.qty < 5).sort((a,b) => a.qty - b.qty).slice(0, 5);
+            labels = sorted.map(i => i.name);
+            data = sorted.map(i => i.qty);
+            bgColor = '#ffc107';
+             sorted.forEach(i => listHTML += `<li class="list-group-item d-flex justify-content-between align-items-start"><div class="ms-2 me-auto"><div class="fw-bold">${i.name}</div></div><span class="badge bg-warning text-dark rounded-pill">${i.qty}</span></li>`);
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: bgColor,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        document.getElementById('detailedList').innerHTML = listHTML;
+        document.getElementById('exportReportBtn').classList.remove('d-none'); // Show export button
+        new bootstrap.Modal(document.getElementById('chartModal')).show();
+    }
+
+    function exportDetailedReport() {
+        const ws = XLSX.utils.json_to_sheet(db);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+        XLSX.writeFile(wb, "Pharmacy_Inventory_Report.xlsx");
+    }
+
+    // --- 9. Data Management (Backup/Restore/Import) ---
+    function backupData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "pharmacy_backup_" + new Date().toISOString().slice(0,10) + ".json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function handleRestoreFile(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(Array.isArray(data)) {
+                    if(confirm(`هل تريد استعادة ${data.length} صنف؟ سيتم استبدال البيانات الحالية.`)) {
+                        db = data;
+                        saveToLocal();
+                        refreshUI();
+                    }
+                } else {
+                    alert('ملف غير صالح');
+                }
+            } catch(err) { alert('خطأ في قراءة الملف'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function handleImportExcelFile(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+            
+            // Normalize Data
+            stagedData = jsonData.map(row => ({
+                name: row.name || row['الاسم'] || row['Item'] || 'Unknown',
+                qty: Number(row.qty || row['الكمية'] || row['Quantity'] || 0),
+                price: Number(row.price || row['السعر'] || row['Price'] || 0),
+                exp: row.exp || row['التاريخ'] || row['Expiry'] || '2025-01-01',
+                buyPrice: 0,
+                active: ''
+            }));
+
+            document.getElementById('mergeMessage').innerText = `تم العثور على ${stagedData.length} صنف في الملف`;
+            new bootstrap.Modal(document.getElementById('mergeModal')).show();
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function processMerge(type) {
+        if(!stagedData) return;
+        
+        if(type === 'replace') {
+            if(confirm('سيتم حذف جميع البيانات الحالية! هل أنت متأكد؟')) {
+                db = stagedData;
+            }
+        } else if(type === 'add_new') {
+            db = [...db, ...stagedData];
+        } else if(type === 'merge') {
+            stagedData.forEach(newItem => {
+                const existing = db.find(item => item.name === newItem.name);
+                if(existing) {
+                    existing.qty += newItem.qty; // Just add qty
+                } else {
+                    db.push(newItem);
+                }
+            });
+        }
+        
+        saveToLocal();
+        refreshUI();
+        bootstrap.Modal.getInstance(document.getElementById('mergeModal')).hide();
+        stagedData = null;
+    }
+
+    // --- 10. Addons (Dark Mode & Lang) ---
+    function addon_init() {
+        if(localStorage.getItem('wm_dark_mode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('darkIcon').className = 'fas fa-sun';
+        }
+    }
+
     function addon_toggleDark() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
@@ -1698,48 +1292,16 @@
     }
 
     function addon_toggleLang() {
-        const currentDir = document.documentElement.getAttribute('dir');
-        const newDir = currentDir === 'rtl' ? 'ltr' : 'rtl';
-        document.documentElement.setAttribute('dir', newDir);
-        localStorage.setItem('wm_lang_dir', newDir);
-    }
-
-    function addon_init() {
-        if(localStorage.getItem('wm_dark_mode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('darkIcon').className = 'fas fa-sun';
+        const html = document.documentElement;
+        if(html.getAttribute('dir') === 'rtl') {
+            html.setAttribute('dir', 'ltr');
+            html.setAttribute('lang', 'en');
+            // Basic text replacements could go here
+        } else {
+            html.setAttribute('dir', 'rtl');
+            html.setAttribute('lang', 'ar');
         }
-        
-        const savedDir = localStorage.getItem('wm_lang_dir');
-        if(savedDir) document.documentElement.setAttribute('dir', savedDir);
-
-        db = db.map(item => ({
-            name: item.name || "بدون اسم",
-            qty: isNaN(item.qty) ? 0 : Number(item.qty),
-            price: isNaN(item.price) ? 0 : Number(item.price),
-            buyPrice: isNaN(item.buyPrice) ? 0 : Number(item.buyPrice),
-            exp: item.exp || calculateExpiryDate(),
-            active: item.active || "",
-            source: item.source || "",
-            addedDate: item.addedDate || new Date().toISOString().split('T')[0]
-        }));
-        
-        if (!localStorage.getItem('wm_invoices')) {
-            localStorage.setItem('wm_invoices', JSON.stringify([]));
-        }
-        
-        console.log("🚀 نظام ماسح الفواتير الذكي جاهز للتشغيل!");
-        console.log("🔑 المفتاح النشط: " + AI_API_KEY);
-    }
-
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        });
     }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
